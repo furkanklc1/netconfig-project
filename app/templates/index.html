@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NetConfig AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      body {
+        background: linear-gradient(180deg, #f5f7ff 0%, #f7fafc 100%);
+      }
+      .hero {
+        background: radial-gradient(circle at top right, #4f46e5, #1d4ed8 60%, #0f172a);
+        color: #fff;
+        border-radius: 1rem;
+        padding: 2rem;
+        box-shadow: 0 15px 35px rgba(15, 23, 42, 0.2);
+      }
+      .soft-card {
+        border: 0;
+        border-radius: 1rem;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      }
+      .findings-wrap {
+        background: #ffffff;
+        border-radius: 1rem;
+      }
+      .findings-head {
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .finding-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 0.85rem;
+        padding: 1rem 1.1rem;
+        background: #fff;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+      }
+      .finding-item.high {
+        background: #fef2f2;
+        border-color: #fecaca;
+      }
+      .finding-item.medium {
+        background: #fff7ed;
+        border-color: #fed7aa;
+      }
+      .finding-item.low {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+      }
+      .finding-item + .finding-item {
+        margin-top: 1rem;
+      }
+      .severity-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .severity-pill {
+        border-radius: 999px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.82rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .severity-high {
+        background: #dc2626;
+        box-shadow: 0 0 0 rgba(220, 38, 38, 0.65);
+        animation: pulse-high 1.5s infinite;
+      }
+      .severity-medium {
+        background: #d97706;
+        box-shadow: 0 0 0 rgba(217, 119, 6, 0.65);
+        animation: pulse-medium 1.7s infinite;
+      }
+      .severity-low {
+        background: #2563eb;
+        box-shadow: 0 0 0 rgba(37, 99, 235, 0.65);
+        animation: pulse-low 1.9s infinite;
+      }
+      .severity-text {
+        font-size: 0.82rem;
+        color: #475569;
+        text-transform: capitalize;
+      }
+      .severity-pill.high {
+        background: #fef2f2;
+        color: #991b1b;
+      }
+      .severity-pill.medium {
+        background: #fff7ed;
+        color: #9a3412;
+      }
+      .severity-pill.low {
+        background: #eff6ff;
+        color: #1e3a8a;
+      }
+      @keyframes pulse-high {
+        0% {
+          box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55);
+          opacity: 1;
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+          opacity: 0.75;
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+          opacity: 1;
+        }
+      }
+      @keyframes pulse-medium {
+        0% {
+          box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.55);
+          opacity: 1;
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(217, 119, 6, 0);
+          opacity: 0.75;
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(217, 119, 6, 0);
+          opacity: 1;
+        }
+      }
+      @keyframes pulse-low {
+        0% {
+          box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.55);
+          opacity: 1;
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+          opacity: 0.75;
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+          opacity: 1;
+        }
+      }
+      code {
+        background: #f1f5f9;
+        padding: 0.15rem 0.4rem;
+        border-radius: 0.35rem;
+        color: #0f172a;
+      }
+      .recommendation {
+        color: #0f766e;
+      }
+      .recommendation em {
+        color: #0e7490;
+        font-weight: 600;
+      }
+      .diff-line {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.84rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 0.4rem 0.55rem;
+      }
+      .diff-line.old {
+        background: #fef2f2;
+        border-color: #fecaca;
+      }
+      .diff-line.new {
+        background: #ecfeff;
+        border-color: #a5f3fc;
+      }
+      .diff-pair {
+        border: 1px solid #e2e8f0;
+        border-radius: 0.6rem;
+        overflow: hidden;
+      }
+      .diff-pair .diff-line {
+        border: 0;
+        border-radius: 0;
+      }
+      .diff-group {
+        border-radius: 0.6rem;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+      }
+      .diff-group .diff-line {
+        border: 0;
+        border-radius: 0;
+      }
+      .diff-children {
+        padding-left: 1.25rem;
+        border-left: 2px solid #cbd5e1;
+        margin-left: 0.75rem;
+      }
+      .diff-child {
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container py-4 py-md-5">
+      <section class="hero mb-4">
+        <h1 class="display-6 fw-bold mb-2">NetConfig AI</h1>
+        <p class="mb-0 opacity-75">
+          Cisco IOS konfigürasyonlarını analiz eden uygulama
+        </p>
+      </section>
+
+      <section class="card soft-card mb-4">
+        <div class="card-body p-4">
+          <h2 class="h5 mb-3">Configuration Dosya Analizi</h2>
+          <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="analysis_type" value="single">
+            <label for="config_file" class="form-label text-muted">Desteklenen formatlar: .txt, .cfg</label>
+            <div class="input-group">
+              <input
+                id="config_file"
+                name="config_file"
+                type="file"
+                accept=".txt,.cfg,text/plain"
+                class="form-control"
+              >
+              <button class="btn btn-primary px-4" type="submit">Analiz Et</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="card soft-card mb-4">
+        <div class="card-body p-4">
+          <h2 class="h5 mb-3">Configuration Diff Analizi</h2>
+          <p class="text-muted mb-3">İki config dosyasını karşılaştırır.</p>
+          <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="analysis_type" value="diff">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="old_config_file" class="form-label text-muted">Eski config (.txt/.cfg)</label>
+                <input id="old_config_file" name="old_config_file" type="file" accept=".txt,.cfg,text/plain" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label for="new_config_file" class="form-label text-muted">Yeni config (.txt/.cfg)</label>
+                <input id="new_config_file" name="new_config_file" type="file" accept=".txt,.cfg,text/plain" class="form-control">
+              </div>
+            </div>
+            <button class="btn btn-outline-primary px-4 mt-3" type="submit">Diff Analizi Yap</button>
+          </form>
+        </div>
+      </section>
+
+      {% if error %}
+      <div class="alert alert-danger border-0 shadow-sm">{{ error }}</div>
+      {% endif %}
+
+      {% if uploaded_name %}
+      <div class="alert alert-info border-0 shadow-sm">
+        Yüklenen dosya: <strong>{{ uploaded_name }}</strong>
+      </div>
+      {% endif %}
+
+      {% if old_uploaded_name and new_uploaded_name %}
+      <div class="alert alert-info border-0 shadow-sm">
+        Eski dosya: <strong>{{ old_uploaded_name }}</strong> |
+        Yeni dosya: <strong>{{ new_uploaded_name }}</strong>
+      </div>
+      {% endif %}
+
+      {% if report %}
+      <section class="card soft-card findings-wrap">
+        <div class="card-header bg-white border-0 pt-4 px-4 findings-head">
+          <div class="d-flex justify-content-between align-items-center">
+            <h3 class="h5 mb-0">Bulgu Listesi</h3>
+            <span class="badge text-bg-light border text-dark rounded-pill px-3 py-2">{{ report|length }} bulgu</span>
+          </div>
+        </div>
+        <ul class="list-group list-group-flush px-3 py-3 bg-transparent">
+          {% for item in report %}
+          <li class="list-group-item finding-item {{ item.severity }}">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <strong class="fw-semibold">{{ item.message }}</strong>
+              <div class="severity-pill {{ item.severity }}">
+                {% if item.severity == "high" %}
+                <span class="severity-dot severity-high"></span>
+                {% elif item.severity == "medium" %}
+                <span class="severity-dot severity-medium"></span>
+                {% else %}
+                <span class="severity-dot severity-low"></span>
+                {% endif %}
+                <span class="severity-text">{{ item.severity }}</span>
+              </div>
+            </div>
+            <div class="small text-muted mt-2">{{ item.rule_id }}</div>
+            <div class="small mt-2"><code>{{ item.context }}</code></div>
+            <div class="mt-2 recommendation"><em>Öneri:</em> {{ item.recommendation }}</div>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% elif has_input and analysis_mode == "single" %}
+      <div class="alert alert-success border-0 shadow-sm">
+        Riskli bir yapılandırma bulunamadı.
+      </div>
+      {% endif %}
+
+      {% if diff_result %}
+      <section class="card soft-card findings-wrap mt-4">
+        <div class="card-header bg-white border-0 pt-4 px-4 findings-head">
+          <div class="d-flex justify-content-between align-items-center">
+            <h3 class="h5 mb-0">Diff Analizi Sonucu</h3>
+            <span class="badge text-bg-light border text-dark rounded-pill px-3 py-2">
+              {{ diff_result.changed_line_count }} değişen satır
+            </span>
+          </div>
+        </div>
+        <div class="card-body px-4 py-3">
+          <h4 class="h6 mb-2">Değiştirilen Satırlar (Eski → Yeni)</h4>
+          {% if diff_result.modified_pairs %}
+          <div class="d-grid gap-2 mb-4">
+            {% for pair in diff_result.modified_pairs %}
+            <div class="diff-pair">
+              <div class="diff-line old">
+              <strong>-</strong>
+              {{ pair.old_line }}
+              </div>
+              <div class="diff-line new">
+              <strong>+</strong>
+              {{ pair.new_line }}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="alert alert-secondary border-0">Değiştirilen satır bulunamadı.</div>
+          {% endif %}
+
+          <h4 class="h6 mb-2">Eklenenler</h4>
+          {% if diff_result.added_groups %}
+          <div class="d-grid gap-3 mb-4">
+            {% for group in diff_result.added_groups %}
+            <div class="diff-group">
+              <div class="diff-line new"><strong>+</strong> {{ group.parent }}</div>
+              {% if group.children %}
+              <div class="diff-children">
+                {% for child in group.children %}
+                <div class="diff-line new diff-child"><strong>+</strong> {{ child }}</div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="alert alert-secondary border-0">Yeni eklenen satır yok.</div>
+          {% endif %}
+
+          <h4 class="h6 mb-2">Silinenler</h4>
+          {% if diff_result.removed_groups %}
+          <div class="d-grid gap-3 mb-4">
+            {% for group in diff_result.removed_groups %}
+            <div class="diff-group">
+              <div class="diff-line old"><strong>-</strong> {{ group.parent }}</div>
+              {% if group.children %}
+              <div class="diff-children">
+                {% for child in group.children %}
+                <div class="diff-line old diff-child"><strong>-</strong> {{ child }}</div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="alert alert-secondary border-0">Silinen satır yok.</div>
+          {% endif %}
+
+          <h4 class="h6 mb-2">Yeni Oluşan Riskler</h4>
+          {% if diff_result.new_findings %}
+          <ul class="list-group list-group-flush mb-4">
+            {% for item in diff_result.new_findings %}
+            <li class="list-group-item finding-item {{ item.severity }}">
+              <div class="d-flex justify-content-between align-items-start gap-3">
+                <div class="fw-semibold">{{ item.message }}</div>
+                <div class="severity-pill {{ item.severity }}">
+                  {% if item.severity == "high" %}
+                  <span class="severity-dot severity-high"></span>
+                  {% elif item.severity == "medium" %}
+                  <span class="severity-dot severity-medium"></span>
+                  {% else %}
+                  <span class="severity-dot severity-low"></span>
+                  {% endif %}
+                  <span class="severity-text">{{ item.severity }}</span>
+                </div>
+              </div>
+              <div class="small text-muted mt-1">{{ item.rule_id }} - <code>{{ item.context }}</code></div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <div class="alert alert-success border-0">Değişiklik sonrası yeni risk tespit edilmedi.</div>
+          {% endif %}
+
+          <h4 class="h6 mb-2">Çözülen Riskler</h4>
+          {% if diff_result.resolved_findings %}
+          <ul class="list-group list-group-flush">
+            {% for item in diff_result.resolved_findings %}
+            <li class="list-group-item finding-item low">
+              <div class="fw-semibold">{{ item.message }}</div>
+              <div class="small text-muted mt-1">{{ item.rule_id }} - <code>{{ item.context }}</code></div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <div class="alert alert-secondary border-0 mb-0">Çözülen risk bulunamadı.</div>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+    </div>
+    <script>
+      (function () {
+        const filterButtons = document.querySelectorAll(".category-filter");
+        const findingRows = document.querySelectorAll(".finding-row");
+        if (!filterButtons.length || !findingRows.length) {
+          return;
+        }
+        filterButtons.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            const target = btn.getAttribute("data-category");
+            filterButtons.forEach(function (b) {
+              b.classList.remove("active");
+              b.classList.add("btn-outline-secondary");
+              b.classList.remove("btn-dark");
+            });
+            btn.classList.add("active");
+            btn.classList.add("btn-dark");
+            btn.classList.remove("btn-outline-secondary");
+            findingRows.forEach(function (row) {
+              const rowCategory = row.getAttribute("data-category");
+              if (target === "all" || rowCategory === target) {
+                row.style.display = "";
+              } else {
+                row.style.display = "none";
+              }
+            });
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
