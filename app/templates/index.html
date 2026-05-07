@@ -50,6 +50,9 @@
       .finding-item + .finding-item {
         margin-top: 1rem;
       }
+      .finding-item.hidden {
+        display: none !important;
+      }
       .severity-dot {
         width: 9px;
         height: 9px;
@@ -194,6 +197,101 @@
       .diff-child {
         font-size: 0.8rem;
       }
+      .device-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        background: #e0e7ff;
+        color: #1e3a8a;
+        border: 1px solid #c7d2fe;
+      }
+      .device-badge.platform {
+        background: #ecfeff;
+        color: #155e75;
+        border-color: #a5f3fc;
+      }
+      .device-badge.version {
+        background: #f0fdf4;
+        color: #166534;
+        border-color: #bbf7d0;
+      }
+      .device-badge.boot {
+        background: #f8fafc;
+        color: #334155;
+        border-color: #cbd5e1;
+      }
+      .device-badge code {
+        background: transparent;
+        padding: 0;
+        color: inherit;
+      }
+      .category-filter {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        padding: 0.75rem 1.1rem 0.25rem 1.1rem;
+      }
+      .category-filter button {
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        border-radius: 999px;
+        padding: 0.25rem 0.85rem;
+        font-size: 0.82rem;
+        color: #334155;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .category-filter button:hover {
+        background: #e2e8f0;
+      }
+      .category-filter button.active {
+        background: #4f46e5;
+        color: #fff;
+        border-color: #4f46e5;
+      }
+      .category-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+      .category-pill.security {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
+      .category-pill.routing {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+      }
+      .category-pill.l2 {
+        background: #ede9fe;
+        color: #5b21b6;
+        border: 1px solid #ddd6fe;
+      }
+      .category-pill.compliance {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+      }
+      .category-pill.operations {
+        background: #e5e7eb;
+        color: #1f2937;
+        border: 1px solid #d1d5db;
+      }
+      .category-pill.general {
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+      }
     </style>
   </head>
   <body>
@@ -252,14 +350,58 @@
 
       {% if uploaded_name %}
       <div class="alert alert-info border-0 shadow-sm">
-        Yüklenen dosya: <strong>{{ uploaded_name }}</strong>
+        <div>Yüklenen dosya: <strong>{{ uploaded_name }}</strong></div>
+        {% if device_info %}
+        <div class="d-flex flex-wrap gap-2 mt-2">
+          <span class="device-badge vendor">Vendor: <strong>{{ device_info.vendor }}</strong></span>
+          {% if device_info.platform %}
+          <span class="device-badge platform">Platform: <strong>{{ device_info.platform }}</strong></span>
+          {% endif %}
+          {% if device_info.os_version %}
+          <span class="device-badge version">OS: <strong>{{ device_info.os_version }}</strong></span>
+          {% endif %}
+          {% if device_info.boot_image %}
+          <span class="device-badge boot">Boot: <code>{{ device_info.boot_image }}</code></span>
+          {% endif %}
+        </div>
+        {% endif %}
       </div>
       {% endif %}
 
       {% if old_uploaded_name and new_uploaded_name %}
       <div class="alert alert-info border-0 shadow-sm">
-        Eski dosya: <strong>{{ old_uploaded_name }}</strong> |
-        Yeni dosya: <strong>{{ new_uploaded_name }}</strong>
+        <div>
+          Eski dosya: <strong>{{ old_uploaded_name }}</strong> |
+          Yeni dosya: <strong>{{ new_uploaded_name }}</strong>
+        </div>
+        {% if diff_result and (diff_result.old_device_info or diff_result.new_device_info) %}
+        <div class="row g-2 mt-2">
+          <div class="col-md-6">
+            <div class="text-muted small mb-1">Eski cihaz</div>
+            <div class="d-flex flex-wrap gap-2">
+              <span class="device-badge vendor">{{ diff_result.old_device_info.vendor }}</span>
+              {% if diff_result.old_device_info.platform %}
+              <span class="device-badge platform">{{ diff_result.old_device_info.platform }}</span>
+              {% endif %}
+              {% if diff_result.old_device_info.os_version %}
+              <span class="device-badge version">v{{ diff_result.old_device_info.os_version }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="text-muted small mb-1">Yeni cihaz</div>
+            <div class="d-flex flex-wrap gap-2">
+              <span class="device-badge vendor">{{ diff_result.new_device_info.vendor }}</span>
+              {% if diff_result.new_device_info.platform %}
+              <span class="device-badge platform">{{ diff_result.new_device_info.platform }}</span>
+              {% endif %}
+              {% if diff_result.new_device_info.os_version %}
+              <span class="device-badge version">v{{ diff_result.new_device_info.os_version }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -285,9 +427,17 @@
             </div>
           </div>
         </div>
+        <div class="category-filter">
+          <button type="button" class="filter-btn active" data-filter="all">Tümü</button>
+          <button type="button" class="filter-btn" data-filter="security">Security</button>
+          <button type="button" class="filter-btn" data-filter="routing">Routing</button>
+          <button type="button" class="filter-btn" data-filter="l2">L2 / Switching</button>
+          <button type="button" class="filter-btn" data-filter="compliance">Compliance</button>
+          <button type="button" class="filter-btn" data-filter="operations">Operations</button>
+        </div>
         <ul class="list-group list-group-flush px-3 py-3 bg-transparent">
           {% for item in report %}
-          <li class="list-group-item finding-item {{ item.severity }}">
+          <li class="list-group-item finding-item {{ item.severity }}" data-category="{{ item.category }}">
             <div class="d-flex justify-content-between align-items-start gap-3">
               <strong class="fw-semibold">{{ item.message }}</strong>
               <div class="severity-pill {{ item.severity }}">
@@ -301,7 +451,10 @@
                 <span class="severity-text">{{ item.severity }}</span>
               </div>
             </div>
-            <div class="small text-muted mt-2">{{ item.rule_id }}</div>
+            <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+              <div class="small text-muted">{{ item.rule_id }}</div>
+              <span class="category-pill {{ item.category }}">{{ item.category }}</span>
+            </div>
             <div class="small mt-2"><code>{{ item.context }}</code></div>
             <div class="mt-2 recommendation"><em>Öneri:</em> {{ item.recommendation }}</div>
           </li>
@@ -325,6 +478,16 @@
           </div>
         </div>
         <div class="card-body px-4 py-3">
+          {% if diff_result.mismatch_warnings %}
+          <div class="alert alert-warning border-0 shadow-sm">
+            <ul class="mb-0">
+              {% for warning in diff_result.mismatch_warnings %}
+              <li>{{ warning }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
           <h4 class="h6 mb-2">Değiştirilen Satırlar (Eski → Yeni)</h4>
           {% if diff_result.modified_pairs %}
           <div class="d-grid gap-2 mb-4">
@@ -403,7 +566,11 @@
                   <span class="severity-text">{{ item.severity }}</span>
                 </div>
               </div>
-              <div class="small text-muted mt-1">{{ item.rule_id }} - <code>{{ item.context }}</code></div>
+              <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                <div class="small text-muted">{{ item.rule_id }}</div>
+                <span class="category-pill {{ item.category }}">{{ item.category }}</span>
+                <code class="small">{{ item.context }}</code>
+              </div>
             </li>
             {% endfor %}
           </ul>
@@ -428,5 +595,25 @@
       </section>
       {% endif %}
     </div>
+    <script>
+      document.addEventListener('click', function (event) {
+        var btn = event.target.closest('.filter-btn');
+        if (!btn) return;
+        var wrap = btn.closest('.findings-wrap');
+        if (!wrap) return;
+        wrap.querySelectorAll('.filter-btn').forEach(function (b) {
+          b.classList.remove('active');
+        });
+        btn.classList.add('active');
+        var filter = btn.dataset.filter;
+        wrap.querySelectorAll('.finding-item').forEach(function (item) {
+          if (filter === 'all' || item.dataset.category === filter) {
+            item.classList.remove('hidden');
+          } else {
+            item.classList.add('hidden');
+          }
+        });
+      });
+    </script>
   </body>
 </html>

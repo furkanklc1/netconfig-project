@@ -3,7 +3,7 @@ import uuid
 
 from flask import Flask, redirect, render_template, request, url_for
 
-from app.service import audit_config_diff, audit_config_text
+from app.service import audit_config_diff, audit_config_text, detect_device_info
 
 app = Flask(__name__, template_folder="app/templates")
 app.config["SECRET_KEY"] = secrets.token_hex(16)
@@ -66,6 +66,7 @@ def index():
             old_uploaded_name=payload.get("old_uploaded_name", ""),
             new_uploaded_name=payload.get("new_uploaded_name", ""),
             analysis_mode=payload.get("analysis_mode", ""),
+            device_info=payload.get("device_info"),
         )
 
     payload: dict = {
@@ -77,6 +78,7 @@ def index():
         "old_uploaded_name": "",
         "new_uploaded_name": "",
         "analysis_mode": "",
+        "device_info": None,
     }
 
     analysis_type = request.form.get("analysis_type", "single")
@@ -122,6 +124,7 @@ def index():
                 payload["has_input"] = True
                 raw_config = _decode_file(uploaded_file)
                 payload["report"] = _sort_findings(audit_config_text(raw_config))
+                payload["device_info"] = detect_device_info(raw_config)
 
     token = _store_result(payload)
     return redirect(url_for("index", r=token))

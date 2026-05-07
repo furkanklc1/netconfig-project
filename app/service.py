@@ -15,6 +15,122 @@ def _extract_hostname(text: str) -> str | None:
     return None
 
 
+_PLATFORM_PATTERNS: list[tuple[str, str]] = [
+    (r"isr4\d{3}", "Cisco ISR 4000"),
+    (r"asr1\d{3}", "Cisco ASR 1000"),
+    (r"asr9\d{3}", "Cisco ASR 9000"),
+    (r"cat9k|c9300|c9400|c9500|c9600", "Cisco Catalyst 9000"),
+    (r"c2900|c2911|c2921|c2951", "Cisco 2900 ISR"),
+    (r"c3900|c3925|c3945", "Cisco 3900 ISR"),
+    (r"c1900|c1921|c1941", "Cisco 1900 ISR"),
+    (r"c1841|c1861", "Cisco 1800 ISR"),
+    (r"c800|c881|c891", "Cisco 800 ISR"),
+    (r"c2960", "Cisco Catalyst 2960"),
+    (r"c3560", "Cisco Catalyst 3560"),
+    (r"c3750", "Cisco Catalyst 3750"),
+    (r"c3850", "Cisco Catalyst 3850"),
+    (r"c4500|c4503|c4506|c4507|c4510", "Cisco Catalyst 4500"),
+    (r"c6500|c6504|c6506|c6509|c6513", "Cisco Catalyst 6500"),
+    (r"nxos|n3k|n5k|n7k|n9k", "Cisco Nexus"),
+    (r"csr1000v|vios|cml", "Cisco Virtual"),
+]
+
+
+def _platform_from_boot_image(image_name: str) -> str | None:
+    name_lower = image_name.lower()
+    for pattern, label in _PLATFORM_PATTERNS:
+        if re.search(pattern, name_lower):
+            return label
+    return None
+
+
+def detect_device_info(text: str) -> dict:
+    info: dict = {
+        "vendor": "Unknown",
+        "platform": None,
+        "os_version": None,
+        "boot_image": None,
+    }
+
+    has_set_system = re.search(
+        r"^\s*set\s+system\s+host-name\b",
+        text,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    has_sysname = re.search(
+        r"^\s*sysname\s+\S+",
+        text,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    has_feature_block = re.search(
+        r"^\s*feature\s+\w+",
+        text,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    has_terminattr = re.search(
+        r"^\s*daemon\s+TerminAttr|^\s*aaa\s+root\s+secret",
+        text,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    has_cisco_ios_markers = re.search(
+        r"^\s*(service\s+timestamps|enable\s+secret|service\s+password-encryption)",
+        text,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    has_hostname = re.search(
+        r"^\s*hostname\s+\S+",
+        text,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+
+    if has_set_system:
+        info["vendor"] = "Juniper"
+    elif has_sysname:
+        info["vendor"] = "Huawei"
+    elif has_terminattr:
+        info["vendor"] = "Arista EOS"
+    elif has_feature_block and has_hostname:
+        info["vendor"] = "Cisco NX-OS"
+    elif has_cisco_ios_markers or has_hostname:
+        info["vendor"] = "Cisco IOS"
+
+    version_match = re.search(
+        r"^\s*version\s+(\d+\.\d+(?:\([^)]+\))?[a-zA-Z0-9.]*)",
+        text,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    if version_match:
+        info["os_version"] = version_match.group(1)
+
+    boot_match = re.search(
+        r"^\s*boot\s+system\s+(?:flash:|bootflash:|disk\d+:|harddisk:)?([^\s]+)",
+        text,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    if boot_match:
+        boot_image = boot_match.group(1)
+        info["boot_image"] = boot_image
+        platform = _platform_from_boot_image(boot_image)
+        if platform:
+            info["platform"] = platform
+
+    if info["platform"] is None:
+        if re.search(
+            r"interface\s+(TwoGigabitEthernet|TwentyFiveGigE|HundredGigE|FortyGigabitEthernet)",
+            text,
+            flags=re.IGNORECASE,
+        ):
+            info["platform"] = "Cisco Catalyst 9000 / IOS XE"
+        elif re.search(
+            r"interface\s+Ethernet\d+/\d+",
+            text,
+            flags=re.IGNORECASE,
+        ) and info["vendor"] == "Cisco NX-OS":
+            info["platform"] = "Cisco Nexus"
+
+    return info
+
+
 def _detect_device_role(text: str) -> str:
     has_router_keywords = bool(
         re.search(
@@ -160,6 +276,8 @@ def audit_config_diff(old_text: str, new_text: str) -> dict:
     new_hostname = _extract_hostname(new_text)
     old_role = _detect_device_role(old_text)
     new_role = _detect_device_role(new_text)
+    old_device_info = detect_device_info(old_text)
+    new_device_info = detect_device_info(new_text)
 
     mismatch_warnings: list[str] = []
     if old_hostname and new_hostname and old_hostname != new_hostname:
@@ -171,6 +289,24 @@ def audit_config_diff(old_text: str, new_text: str) -> dict:
         mismatch_warnings.append(
             f"Cihaz rolleri farklı görünüyor (eski: {old_role}, yeni: {new_role}). "
             "Aynı cihazın iki versiyonunu karşılaştırdığınızdan emin olun."
+        )
+    if (
+        old_device_info["vendor"] != "Unknown"
+        and new_device_info["vendor"] != "Unknown"
+        and old_device_info["vendor"] != new_device_info["vendor"]
+    ):
+        mismatch_warnings.append(
+            f"Vendor farklı görünüyor (eski: {old_device_info['vendor']}, yeni: "
+            f"{new_device_info['vendor']}). Aynı vendor için diff yapmanız önerilir."
+        )
+    if (
+        old_device_info["platform"]
+        and new_device_info["platform"]
+        and old_device_info["platform"] != new_device_info["platform"]
+    ):
+        mismatch_warnings.append(
+            f"Platform farklı görünüyor (eski: {old_device_info['platform']}, yeni: "
+            f"{new_device_info['platform']})."
         )
 
     return {
@@ -186,5 +322,7 @@ def audit_config_diff(old_text: str, new_text: str) -> dict:
         "new_hostname": new_hostname,
         "old_role": old_role,
         "new_role": new_role,
+        "old_device_info": old_device_info,
+        "new_device_info": new_device_info,
         "mismatch_warnings": mismatch_warnings,
     }
