@@ -301,13 +301,30 @@
       {% endif %}
 
       {% if diff_result %}
+      {% if diff_result.mismatch_warnings %}
+      <div class="alert alert-warning border-0 shadow-sm mt-4 mb-0">
+        <strong>Dikkat:</strong>
+        <ul class="mb-0 mt-1">
+          {% for warning in diff_result.mismatch_warnings %}
+          <li>{{ warning }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
       <section class="card soft-card findings-wrap mt-4">
         <div class="card-header bg-white border-0 pt-4 px-4 findings-head">
-          <div class="d-flex justify-content-between align-items-center">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h3 class="h5 mb-0">Diff Analizi Sonucu</h3>
-            <span class="badge text-bg-light border text-dark rounded-pill px-3 py-2">
-              {{ diff_result.changed_line_count }} değişen satır
-            </span>
+            <div class="d-flex gap-2 align-items-center">
+              {% if diff_result.old_hostname or diff_result.new_hostname %}
+              <span class="badge text-bg-light border text-dark rounded-pill px-3 py-2">
+                {{ diff_result.old_hostname or "?" }} → {{ diff_result.new_hostname or "?" }}
+              </span>
+              {% endif %}
+              <span class="badge text-bg-light border text-dark rounded-pill px-3 py-2">
+                {{ diff_result.changed_line_count }} değişen satır
+              </span>
+            </div>
           </div>
         </div>
         <div class="card-body px-4 py-3">
@@ -414,35 +431,5 @@
       </section>
       {% endif %}
     </div>
-    <script>
-      (function () {
-        const filterButtons = document.querySelectorAll(".category-filter");
-        const findingRows = document.querySelectorAll(".finding-row");
-        if (!filterButtons.length || !findingRows.length) {
-          return;
-        }
-        filterButtons.forEach(function (btn) {
-          btn.addEventListener("click", function () {
-            const target = btn.getAttribute("data-category");
-            filterButtons.forEach(function (b) {
-              b.classList.remove("active");
-              b.classList.add("btn-outline-secondary");
-              b.classList.remove("btn-dark");
-            });
-            btn.classList.add("active");
-            btn.classList.add("btn-dark");
-            btn.classList.remove("btn-outline-secondary");
-            findingRows.forEach(function (row) {
-              const rowCategory = row.getAttribute("data-category");
-              if (target === "all" || rowCategory === target) {
-                row.style.display = "";
-              } else {
-                row.style.display = "none";
-              }
-            });
-          });
-        });
-      })();
-    </script>
   </body>
 </html>

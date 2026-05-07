@@ -1,8 +1,42 @@
 import difflib
+import re
 
 from app.ai_commentary import format_report
 from app.parser import parse_cisco_ios_config
 from app.rules import run_rules
+
+
+def _extract_hostname(text: str) -> str | None:
+    for raw in text.splitlines():
+        line = raw.strip()
+        match = re.match(r"^hostname\s+(\S+)$", line, flags=re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return None
+
+
+def _detect_device_role(text: str) -> str:
+    has_router_keywords = bool(
+        re.search(
+            r"^\s*(router\s+(ospf|bgp|eigrp|rip)|ip\s+route\s+\S+)",
+            text,
+            flags=re.MULTILINE | re.IGNORECASE,
+        )
+    )
+    has_switch_keywords = bool(
+        re.search(
+            r"^\s*(switchport\s+|spanning-tree\s+|vlan\s+\d+)",
+            text,
+            flags=re.MULTILINE | re.IGNORECASE,
+        )
+    )
+    if has_router_keywords and not has_switch_keywords:
+        return "router"
+    if has_switch_keywords and not has_router_keywords:
+        return "switch"
+    if has_switch_keywords and has_router_keywords:
+        return "layer3-switch"
+    return "unknown"
 
 
 def audit_config_text(config_text: str) -> list[dict]:
@@ -122,6 +156,23 @@ def audit_config_diff(old_text: str, new_text: str) -> dict:
         )
     ]
 
+    old_hostname = _extract_hostname(old_text)
+    new_hostname = _extract_hostname(new_text)
+    old_role = _detect_device_role(old_text)
+    new_role = _detect_device_role(new_text)
+
+    mismatch_warnings: list[str] = []
+    if old_hostname and new_hostname and old_hostname != new_hostname:
+        mismatch_warnings.append(
+            f"Yüklenen iki dosyanın hostname'i farklı: '{old_hostname}' ve "
+            f"'{new_hostname}'. Diff sonucu yanıltıcı olabilir."
+        )
+    if old_role != "unknown" and new_role != "unknown" and old_role != new_role:
+        mismatch_warnings.append(
+            f"Cihaz rolleri farklı görünüyor (eski: {old_role}, yeni: {new_role}). "
+            "Aynı cihazın iki versiyonunu karşılaştırdığınızdan emin olun."
+        )
+
     return {
         "changed_lines": changed_lines,
         "changed_line_count": len(changed_lines),
@@ -131,4 +182,9 @@ def audit_config_diff(old_text: str, new_text: str) -> dict:
         "new_findings": new_findings,
         "resolved_findings": resolved_findings,
         "changed_line_findings": changed_line_findings,
+        "old_hostname": old_hostname,
+        "new_hostname": new_hostname,
+        "old_role": old_role,
+        "new_role": new_role,
+        "mismatch_warnings": mismatch_warnings,
     }
