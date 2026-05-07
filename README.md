@@ -19,9 +19,11 @@ Bu mimari sayesinde:
 - Kural ekleme / değiştirme **dakikalar** içinde yapılabilir.
 - Üretim ortamı için **güvenli ve hızlı** bir analiz sağlar.
 
-## Yakında: Yapay Zeka Entegrasyonu
+## Yapay Zeka Entegrasyonu
 
-Proje, ilerleyen sürümlerde **LLM tabanlı bir akıllı yorumlayıcı katmanı** ile genişletilecektir. Planlanan AI özellikleri:
+Proje, ilerleyen sürümlerde **LLM tabanlı bir akıllı yorumlayıcı katmanı** ile genişletilecektir. 
+
+Planlanan AI özellikleri:
 
 - **Bağlama duyarlı öneriler**: Sabit metin yerine config içeriğine özel, doğal dil önerileri
 - **Otomatik özetleme**: Yüzlerce satırlık config için yönetici özeti
@@ -121,8 +123,8 @@ netconfig-ai/
 ### Windows (PowerShell)
 
 ```powershell
-git clone https://github.com/<kullaniciadi>/netconfig-ai.git
-cd netconfig-ai
+git clone https://github.com/furkanklc1/netconfig-project.git
+cd netconfig-project
 
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
@@ -132,8 +134,8 @@ python -m venv .venv
 ### macOS / Linux
 
 ```bash
-git clone https://github.com/<kullaniciadi>/netconfig-ai.git
-cd netconfig-ai
+git clone https://github.com/furkanklc1/netconfig-project.git
+cd netconfig-project
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -290,4 +292,4 @@ Yeni kural fikirleri için aşağıdakileri paylaşmanız yeterlidir:
 
 ---
 
-> Bu proje eğitim ve prototip amaçlıdır; üretim ortamında kullanmadan önce kendi gereksinimlerinize göre uyarlayın.
+> Bu proje eğitim ve prototip amaçlıdır; üretim ortamında kullanmadan önce kendi gereksinimlerinize göre uyarlayabilirsiniz.
