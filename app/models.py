@@ -19,6 +19,9 @@ class Interface:
     icmp_redirects_disabled: bool = False
     nonegotiate_set: bool = False
     storm_control_enabled: bool = False
+    has_ip_address: bool = False
+    urpf_enabled: bool = False
+    ospf_authentication: bool = False
 
 
 @dataclass
@@ -35,6 +38,11 @@ class AccessListEntry:
 class OspfProcess:
     process_id: int
     areas: set[str] = field(default_factory=set)
+    areas_with_auth: set[str] = field(default_factory=set)
+    passive_default: bool = False
+    explicit_router_id: bool = False
+    log_adjacency_changes: bool = False
+    auto_cost_reference_bandwidth: int | None = None
 
 
 @dataclass
@@ -42,6 +50,12 @@ class BgpNeighbor:
     neighbor_ip: str
     remote_as: int | None = None
     route_maps: dict[str, str] = field(default_factory=dict)
+    password_set: bool = False
+    max_prefix_set: bool = False
+    ttl_security_set: bool = False
+    description_set: bool = False
+    update_source_set: bool = False
+    update_source_interface: str | None = None
 
 
 @dataclass
@@ -49,6 +63,7 @@ class SnmpCommunity:
     name: str
     permission: str | None = None
     raw_line: str = ""
+    acl_name: str | None = None
 
 
 @dataclass
@@ -91,6 +106,12 @@ class ConfigData:
     ssh_timeout_set: bool = False
     ssh_auth_retries_set: bool = False
     archive_enabled: bool = False
+    snmpv3_configured: bool = False
+    copp_service_policy_set: bool = False
+    rsa_modulus: int | None = None
+    bgp_local_as: int | None = None
+    bgp_router_id_set: bool = False
+    bgp_log_neighbor_changes: bool = False
 
 
 @dataclass

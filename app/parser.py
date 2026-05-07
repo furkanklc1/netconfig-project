@@ -28,6 +28,7 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
     in_console_line = False
     in_vty_line = False
     in_aux_line = False
+    in_control_plane = False
 
     for raw_line in text.splitlines():
         line = raw_line.strip()
@@ -164,19 +165,55 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             continue
 
         snmp_community_match = re.match(
-            r"^snmp-server\s+community\s+(\S+)(?:\s+(\S+))?.*$",
+            r"^snmp-server\s+community\s+(\S+)(.*)$",
             line,
             flags=re.IGNORECASE,
         )
         if snmp_community_match:
-            name, permission = snmp_community_match.groups()
+            name = snmp_community_match.group(1)
+            rest_tokens = snmp_community_match.group(2).split()
+            permission: str | None = None
+            acl_name: str | None = None
+            i = 0
+            while i < len(rest_tokens):
+                token = rest_tokens[i]
+                if token.upper() in {"RO", "RW"}:
+                    permission = token.lower()
+                    i += 1
+                elif token.lower() == "view" and i + 1 < len(rest_tokens):
+                    i += 2
+                elif token.lower() == "ipv6" and i + 1 < len(rest_tokens):
+                    i += 2
+                else:
+                    acl_name = token
+                    i += 1
             data.snmp_communities.append(
                 SnmpCommunity(
                     name=name,
-                    permission=permission.lower() if permission else None,
+                    permission=permission,
                     raw_line=line,
+                    acl_name=acl_name,
                 )
             )
+            continue
+
+        if re.match(
+            r"^snmp-server\s+(user|group)\s+\S+\s+\S+\s+v3\b",
+            line,
+            flags=re.IGNORECASE,
+        ):
+            data.snmpv3_configured = True
+            continue
+
+        rsa_match = re.match(
+            r"^crypto\s+key\s+generate\s+rsa(?:\s+general-keys)?(?:\s+modulus\s+(\d+))?",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if rsa_match:
+            modulus = rsa_match.group(1)
+            if modulus is not None:
+                data.rsa_modulus = int(modulus)
             continue
 
         line_console_match = re.match(
@@ -189,6 +226,7 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             in_console_line = True
             in_vty_line = False
             in_aux_line = False
+            in_control_plane = False
             continue
 
         line_vty_match = re.match(r"^line\s+vty\b.*$", line, flags=re.IGNORECASE)
@@ -196,6 +234,7 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             in_console_line = False
             in_vty_line = True
             in_aux_line = False
+            in_control_plane = False
             continue
 
         line_aux_match = re.match(r"^line\s+aux\b.*$", line, flags=re.IGNORECASE)
@@ -203,7 +242,18 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             in_console_line = False
             in_vty_line = False
             in_aux_line = True
+            in_control_plane = False
             data.aux_section_seen = True
+            continue
+
+        if re.match(r"^control-plane$", line, flags=re.IGNORECASE):
+            current_interface = None
+            current_ospf_process = None
+            in_bgp_section = False
+            in_console_line = False
+            in_vty_line = False
+            in_aux_line = False
+            in_control_plane = True
             continue
 
         intf_match = re.match(r"^interface\s+(\S+)$", line, flags=re.IGNORECASE)
@@ -214,6 +264,7 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             in_console_line = False
             in_vty_line = False
             in_aux_line = False
+            in_control_plane = False
             data.interfaces.append(current_interface)
             continue
 
@@ -225,6 +276,7 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             in_console_line = False
             in_vty_line = False
             in_aux_line = False
+            in_control_plane = False
             data.ospf_processes.setdefault(
                 current_ospf_process,
                 OspfProcess(process_id=current_ospf_process),
@@ -239,6 +291,8 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             in_console_line = False
             in_vty_line = False
             in_aux_line = False
+            in_control_plane = False
+            data.bgp_local_as = int(bgp_match.group(1))
             continue
 
         acl_match = re.match(
@@ -304,6 +358,12 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             data.aux_no_exec_set = True
             continue
 
+        if in_control_plane and re.match(
+            r"^service-policy\s+input\s+\S+$", line, flags=re.IGNORECASE
+        ):
+            data.copp_service_policy_set = True
+            continue
+
         ospf_network_match = re.match(
             r"^network\s+\S+\s+\S+\s+area\s+(\S+)$",
             line,
@@ -312,6 +372,49 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
         if current_ospf_process is not None and ospf_network_match:
             area_id = ospf_network_match.group(1)
             data.ospf_processes[current_ospf_process].areas.add(area_id)
+            continue
+
+        ospf_area_auth_match = re.match(
+            r"^area\s+(\S+)\s+authentication(?:\s+message-digest)?$",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if current_ospf_process is not None and ospf_area_auth_match:
+            area_id = ospf_area_auth_match.group(1)
+            process = data.ospf_processes.setdefault(
+                current_ospf_process,
+                OspfProcess(process_id=current_ospf_process),
+            )
+            process.areas_with_auth.add(area_id)
+            continue
+
+        if current_ospf_process is not None and re.match(
+            r"^passive-interface\s+default$", line, flags=re.IGNORECASE
+        ):
+            data.ospf_processes[current_ospf_process].passive_default = True
+            continue
+
+        if current_ospf_process is not None and re.match(
+            r"^router-id\s+\S+$", line, flags=re.IGNORECASE
+        ):
+            data.ospf_processes[current_ospf_process].explicit_router_id = True
+            continue
+
+        if current_ospf_process is not None and re.match(
+            r"^log-adjacency-changes(?:\s+detail)?$", line, flags=re.IGNORECASE
+        ):
+            data.ospf_processes[current_ospf_process].log_adjacency_changes = True
+            continue
+
+        ospf_auto_cost_match = re.match(
+            r"^auto-cost\s+reference-bandwidth\s+(\d+)$",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if current_ospf_process is not None and ospf_auto_cost_match:
+            data.ospf_processes[current_ospf_process].auto_cost_reference_bandwidth = (
+                int(ospf_auto_cost_match.group(1))
+            )
             continue
 
         bgp_neighbor_remote_as_match = re.match(
@@ -340,6 +443,84 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             neighbor.route_maps[direction.lower()] = route_map_name
             continue
 
+        bgp_neighbor_password_match = re.match(
+            r"^neighbor\s+(\S+)\s+password\s+\S+",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if in_bgp_section and bgp_neighbor_password_match:
+            neighbor_ip = bgp_neighbor_password_match.group(1)
+            neighbor = data.bgp_neighbors.setdefault(
+                neighbor_ip, BgpNeighbor(neighbor_ip=neighbor_ip)
+            )
+            neighbor.password_set = True
+            continue
+
+        if in_bgp_section and re.match(
+            r"^bgp\s+router-id\s+\S+$", line, flags=re.IGNORECASE
+        ):
+            data.bgp_router_id_set = True
+            continue
+
+        if in_bgp_section and re.match(
+            r"^bgp\s+log-neighbor-changes$", line, flags=re.IGNORECASE
+        ):
+            data.bgp_log_neighbor_changes = True
+            continue
+
+        bgp_neighbor_max_prefix_match = re.match(
+            r"^neighbor\s+(\S+)\s+maximum-prefix\s+\d+",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if in_bgp_section and bgp_neighbor_max_prefix_match:
+            neighbor_ip = bgp_neighbor_max_prefix_match.group(1)
+            neighbor = data.bgp_neighbors.setdefault(
+                neighbor_ip, BgpNeighbor(neighbor_ip=neighbor_ip)
+            )
+            neighbor.max_prefix_set = True
+            continue
+
+        bgp_neighbor_ttl_match = re.match(
+            r"^neighbor\s+(\S+)\s+ttl-security\s+hops\s+\d+$",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if in_bgp_section and bgp_neighbor_ttl_match:
+            neighbor_ip = bgp_neighbor_ttl_match.group(1)
+            neighbor = data.bgp_neighbors.setdefault(
+                neighbor_ip, BgpNeighbor(neighbor_ip=neighbor_ip)
+            )
+            neighbor.ttl_security_set = True
+            continue
+
+        bgp_neighbor_desc_match = re.match(
+            r"^neighbor\s+(\S+)\s+description\s+.+$",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if in_bgp_section and bgp_neighbor_desc_match:
+            neighbor_ip = bgp_neighbor_desc_match.group(1)
+            neighbor = data.bgp_neighbors.setdefault(
+                neighbor_ip, BgpNeighbor(neighbor_ip=neighbor_ip)
+            )
+            neighbor.description_set = True
+            continue
+
+        bgp_neighbor_update_src_match = re.match(
+            r"^neighbor\s+(\S+)\s+update-source\s+(\S+)$",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if in_bgp_section and bgp_neighbor_update_src_match:
+            neighbor_ip, src_intf = bgp_neighbor_update_src_match.groups()
+            neighbor = data.bgp_neighbors.setdefault(
+                neighbor_ip, BgpNeighbor(neighbor_ip=neighbor_ip)
+            )
+            neighbor.update_source_set = True
+            neighbor.update_source_interface = src_intf
+            continue
+
         if current_interface is None:
             continue
 
@@ -361,6 +542,34 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             process_id, area = intf_ospf_match.groups()
             current_interface.ospf_process_id = int(process_id)
             current_interface.ospf_area = area
+            continue
+
+        if re.match(
+            r"^ip\s+ospf\s+authentication(?:\s+message-digest)?$",
+            line,
+            flags=re.IGNORECASE,
+        ) or re.match(
+            r"^ip\s+ospf\s+message-digest-key\s+\d+\s+md5\s+\S+",
+            line,
+            flags=re.IGNORECASE,
+        ) or re.match(
+            r"^ip\s+ospf\s+authentication-key\s+\S+",
+            line,
+            flags=re.IGNORECASE,
+        ):
+            current_interface.ospf_authentication = True
+            continue
+
+        if re.match(r"^ip\s+address\s+\S+\s+\S+", line, flags=re.IGNORECASE):
+            current_interface.has_ip_address = True
+            continue
+
+        if re.match(
+            r"^ip\s+verify\s+unicast\s+source\s+reachable-via\s+(rx|any)\b",
+            line,
+            flags=re.IGNORECASE,
+        ):
+            current_interface.urpf_enabled = True
             continue
 
         mode_match = re.match(

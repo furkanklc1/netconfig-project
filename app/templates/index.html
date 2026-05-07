@@ -266,9 +266,23 @@
       {% if report %}
       <section class="card soft-card findings-wrap">
         <div class="card-header bg-white border-0 pt-4 px-4 findings-head">
-          <div class="d-flex justify-content-between align-items-center">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
             <h3 class="h5 mb-0">Bulgu Listesi</h3>
-            <span class="badge text-bg-light border text-dark rounded-pill px-3 py-2">{{ report|length }} bulgu</span>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="severity-pill high">
+                <span class="severity-dot severity-high"></span>
+                <strong>{{ severity_counts.high }}</strong> high
+              </span>
+              <span class="severity-pill medium">
+                <span class="severity-dot severity-medium"></span>
+                <strong>{{ severity_counts.medium }}</strong> medium
+              </span>
+              <span class="severity-pill low">
+                <span class="severity-dot severity-low"></span>
+                <strong>{{ severity_counts.low }}</strong> low
+              </span>
+              <span class="badge text-bg-light border text-dark rounded-pill px-3 py-2">{{ report|length }} bulgu</span>
+            </div>
           </div>
         </div>
         <ul class="list-group list-group-flush px-3 py-3 bg-transparent">
@@ -301,30 +315,13 @@
       {% endif %}
 
       {% if diff_result %}
-      {% if diff_result.mismatch_warnings %}
-      <div class="alert alert-warning border-0 shadow-sm mt-4 mb-0">
-        <strong>Dikkat:</strong>
-        <ul class="mb-0 mt-1">
-          {% for warning in diff_result.mismatch_warnings %}
-          <li>{{ warning }}</li>
-          {% endfor %}
-        </ul>
-      </div>
-      {% endif %}
       <section class="card soft-card findings-wrap mt-4">
         <div class="card-header bg-white border-0 pt-4 px-4 findings-head">
-          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div class="d-flex justify-content-between align-items-center">
             <h3 class="h5 mb-0">Diff Analizi Sonucu</h3>
-            <div class="d-flex gap-2 align-items-center">
-              {% if diff_result.old_hostname or diff_result.new_hostname %}
-              <span class="badge text-bg-light border text-dark rounded-pill px-3 py-2">
-                {{ diff_result.old_hostname or "?" }} → {{ diff_result.new_hostname or "?" }}
-              </span>
-              {% endif %}
-              <span class="badge text-bg-light border text-dark rounded-pill px-3 py-2">
-                {{ diff_result.changed_line_count }} değişen satır
-              </span>
-            </div>
+            <span class="badge text-bg-light border text-dark rounded-pill px-3 py-2">
+              {{ diff_result.changed_line_count }} değişen satır
+            </span>
           </div>
         </div>
         <div class="card-body px-4 py-3">

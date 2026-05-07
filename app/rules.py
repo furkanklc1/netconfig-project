@@ -47,6 +47,22 @@ RULE_CATEGORIES: dict[str, str] = {
     "R043": "operations",
     "R044": "security",
     "R045": "l2",
+    "R046": "security",
+    "R047": "security",
+    "R048": "security",
+    "R049": "security",
+    "R050": "routing",
+    "R051": "routing",
+    "R052": "security",
+    "R053": "routing",
+    "R054": "routing",
+    "R055": "routing",
+    "R056": "routing",
+    "R057": "routing",
+    "R058": "routing",
+    "R059": "routing",
+    "R060": "routing",
+    "R061": "routing",
 }
 
 
@@ -770,6 +786,347 @@ def _rule_access_port_storm_control_missing(data: ConfigData) -> list[Finding]:
     return findings
 
 
+def _rule_snmpv3_missing(data: ConfigData) -> list[Finding]:
+    if not data.snmp_communities:
+        return []
+    if data.snmpv3_configured:
+        return []
+    return [
+        Finding(
+            rule_id="R046",
+            severity="high",
+            message=(
+                "SNMP v1/v2c community kullanılıyor ama SNMPv3 user/group tanımlı değil."
+            ),
+            context="snmp-server",
+        )
+    ]
+
+
+def _rule_snmp_community_no_acl(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for community in data.snmp_communities:
+        if not community.acl_name:
+            findings.append(
+                Finding(
+                    rule_id="R047",
+                    severity="high",
+                    message=(
+                        f"SNMP community `{community.name}` ACL ile kısıtlanmamış."
+                    ),
+                    context=community.raw_line,
+                )
+            )
+    return findings
+
+
+def _rule_copp_missing(data: ConfigData) -> list[Finding]:
+    if data.copp_service_policy_set:
+        return []
+    return [
+        Finding(
+            rule_id="R048",
+            severity="high",
+            message=(
+                "Control Plane Policing (CoPP) tanımlı değil. CPU'yu hedef alan DoS "
+                "saldırılarına karşı koruma yok."
+            ),
+            context="control-plane",
+        )
+    ]
+
+
+def _rule_rsa_modulus_weak(data: ConfigData) -> list[Finding]:
+    if data.rsa_modulus is None:
+        return []
+    if data.rsa_modulus >= 2048:
+        return []
+    return [
+        Finding(
+            rule_id="R049",
+            severity="high",
+            message=(
+                f"RSA anahtar uzunluğu {data.rsa_modulus} bit. En az 2048 bit olmalı."
+            ),
+            context=f"crypto key generate rsa modulus {data.rsa_modulus}",
+        )
+    ]
+
+
+def _rule_ospf_area_authentication_missing(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    interface_auth_areas: dict[int, set[str]] = {}
+    for intf in data.interfaces:
+        if (
+            intf.ospf_authentication
+            and intf.ospf_process_id is not None
+            and intf.ospf_area is not None
+        ):
+            interface_auth_areas.setdefault(intf.ospf_process_id, set()).add(
+                intf.ospf_area
+            )
+    for process_id, process in data.ospf_processes.items():
+        unauth_areas = (
+            process.areas
+            - process.areas_with_auth
+            - interface_auth_areas.get(process_id, set())
+        )
+        for area in sorted(unauth_areas):
+            findings.append(
+                Finding(
+                    rule_id="R050",
+                    severity="high",
+                    message=(
+                        f"OSPF process {process_id} area {area} için authentication "
+                        f"tanımlı değil."
+                    ),
+                    context=f"router ospf {process_id}",
+                )
+            )
+    return findings
+
+
+def _rule_bgp_neighbor_missing_password(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for neighbor in data.bgp_neighbors.values():
+        if neighbor.remote_as is None:
+            continue
+        if not neighbor.password_set:
+            findings.append(
+                Finding(
+                    rule_id="R051",
+                    severity="high",
+                    message=(
+                        f"BGP neighbor {neighbor.neighbor_ip} için MD5 password "
+                        f"(authentication) tanımlı değil."
+                    ),
+                    context=f"neighbor {neighbor.neighbor_ip}",
+                )
+            )
+    return findings
+
+
+def _rule_ospf_passive_default_missing(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for process_id, process in data.ospf_processes.items():
+        if not process.passive_default:
+            findings.append(
+                Finding(
+                    rule_id="R053",
+                    severity="medium",
+                    message=(
+                        f"OSPF process {process_id} altında `passive-interface default` "
+                        f"tanımlı değil. Routing güncellemeleri kullanıcı portlarına sızabilir."
+                    ),
+                    context=f"router ospf {process_id}",
+                )
+            )
+    return findings
+
+
+def _rule_ospf_router_id_missing(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for process_id, process in data.ospf_processes.items():
+        if not process.explicit_router_id:
+            findings.append(
+                Finding(
+                    rule_id="R054",
+                    severity="medium",
+                    message=(
+                        f"OSPF process {process_id} için `router-id` explicit olarak "
+                        f"tanımlanmamış. Beklenmeyen yeniden seçim adjacency'leri sıfırlayabilir."
+                    ),
+                    context=f"router ospf {process_id}",
+                )
+            )
+    return findings
+
+
+def _rule_ospf_log_adjacency_missing(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for process_id, process in data.ospf_processes.items():
+        if not process.log_adjacency_changes:
+            findings.append(
+                Finding(
+                    rule_id="R055",
+                    severity="low",
+                    message=(
+                        f"OSPF process {process_id} için `log-adjacency-changes` tanımlı "
+                        f"değil. Komşu durum değişiklikleri loglanmıyor."
+                    ),
+                    context=f"router ospf {process_id}",
+                )
+            )
+    return findings
+
+
+def _rule_ospf_auto_cost_missing(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for process_id, process in data.ospf_processes.items():
+        bw = process.auto_cost_reference_bandwidth
+        if bw is None:
+            findings.append(
+                Finding(
+                    rule_id="R056",
+                    severity="low",
+                    message=(
+                        f"OSPF process {process_id} için `auto-cost reference-bandwidth` "
+                        f"tanımlı değil (varsayılan 100 Mbps). 1G ve üzeri linkler aynı "
+                        f"maliyete sahip olur."
+                    ),
+                    context=f"router ospf {process_id}",
+                )
+            )
+        elif bw < 1000:
+            findings.append(
+                Finding(
+                    rule_id="R056",
+                    severity="low",
+                    message=(
+                        f"OSPF process {process_id} `auto-cost reference-bandwidth` "
+                        f"{bw} Mbps. Modern ağlarda en az 10000 (10G) önerilir."
+                    ),
+                    context=f"router ospf {process_id}",
+                )
+            )
+    return findings
+
+
+def _rule_bgp_neighbor_max_prefix_missing(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for neighbor in data.bgp_neighbors.values():
+        if neighbor.remote_as is None:
+            continue
+        is_ebgp = (
+            data.bgp_local_as is not None
+            and neighbor.remote_as != data.bgp_local_as
+        )
+        severity = "high" if is_ebgp else "medium"
+        if not neighbor.max_prefix_set:
+            findings.append(
+                Finding(
+                    rule_id="R057",
+                    severity=severity,
+                    message=(
+                        f"BGP neighbor {neighbor.neighbor_ip} için `maximum-prefix` "
+                        f"tanımlı değil. Komşudan gelen aşırı prefix RIB/FIB'i tüketebilir."
+                    ),
+                    context=f"neighbor {neighbor.neighbor_ip}",
+                )
+            )
+    return findings
+
+
+def _rule_bgp_neighbor_ttl_security_missing(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for neighbor in data.bgp_neighbors.values():
+        if neighbor.remote_as is None or data.bgp_local_as is None:
+            continue
+        if neighbor.remote_as == data.bgp_local_as:
+            continue
+        if not neighbor.ttl_security_set:
+            findings.append(
+                Finding(
+                    rule_id="R058",
+                    severity="high",
+                    message=(
+                        f"eBGP neighbor {neighbor.neighbor_ip} için `ttl-security hops` "
+                        f"(GTSM) tanımlı değil. Uzak hop spoof saldırılarına açık."
+                    ),
+                    context=f"neighbor {neighbor.neighbor_ip}",
+                )
+            )
+    return findings
+
+
+def _rule_bgp_log_neighbor_changes_missing(data: ConfigData) -> list[Finding]:
+    if data.bgp_local_as is None:
+        return []
+    if data.bgp_log_neighbor_changes:
+        return []
+    return [
+        Finding(
+            rule_id="R059",
+            severity="low",
+            message=(
+                f"BGP process AS {data.bgp_local_as} altında `bgp log-neighbor-changes` "
+                f"tanımlı değil. Peer state değişiklikleri loglanmıyor."
+            ),
+            context=f"router bgp {data.bgp_local_as}",
+        )
+    ]
+
+
+def _rule_bgp_neighbor_description_missing(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for neighbor in data.bgp_neighbors.values():
+        if neighbor.remote_as is None:
+            continue
+        if not neighbor.description_set:
+            findings.append(
+                Finding(
+                    rule_id="R060",
+                    severity="low",
+                    message=(
+                        f"BGP neighbor {neighbor.neighbor_ip} için `description` tanımlı "
+                        f"değil. Operasyonel takip ve troubleshooting zorlaşır."
+                    ),
+                    context=f"neighbor {neighbor.neighbor_ip}",
+                )
+            )
+    return findings
+
+
+def _rule_ibgp_update_source_missing(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    if data.bgp_local_as is None:
+        return findings
+    for neighbor in data.bgp_neighbors.values():
+        if neighbor.remote_as is None:
+            continue
+        if neighbor.remote_as != data.bgp_local_as:
+            continue
+        if not neighbor.update_source_set:
+            findings.append(
+                Finding(
+                    rule_id="R061",
+                    severity="medium",
+                    message=(
+                        f"iBGP neighbor {neighbor.neighbor_ip} için `update-source` "
+                        f"(genelde Loopback) tanımlı değil. Tek link arızası peering'i bozar."
+                    ),
+                    context=f"neighbor {neighbor.neighbor_ip}",
+                )
+            )
+    return findings
+
+
+def _rule_urpf_missing(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for intf in data.interfaces:
+        if not intf.has_ip_address:
+            continue
+        if intf.shutdown:
+            continue
+        name_lower = intf.name.lower()
+        if name_lower.startswith("loopback") or name_lower.startswith("lo"):
+            continue
+        if intf.urpf_enabled:
+            continue
+        findings.append(
+            Finding(
+                rule_id="R052",
+                severity="medium",
+                message=(
+                    f"{intf.name} L3 interface'inde uRPF "
+                    f"(`ip verify unicast source reachable-via rx`) tanımlı değil."
+                ),
+                context=f"interface {intf.name}",
+            )
+        )
+    return findings
+
+
 def run_rules(data: ConfigData) -> list[Finding]:
     findings: list[Finding] = []
     for rule in (
@@ -818,6 +1175,22 @@ def run_rules(data: ConfigData) -> list[Finding]:
         _rule_loopback_missing,
         _rule_access_port_cdp_disabled_missing,
         _rule_access_port_storm_control_missing,
+        _rule_snmpv3_missing,
+        _rule_snmp_community_no_acl,
+        _rule_copp_missing,
+        _rule_rsa_modulus_weak,
+        _rule_ospf_area_authentication_missing,
+        _rule_bgp_neighbor_missing_password,
+        _rule_urpf_missing,
+        _rule_ospf_passive_default_missing,
+        _rule_ospf_router_id_missing,
+        _rule_ospf_log_adjacency_missing,
+        _rule_ospf_auto_cost_missing,
+        _rule_bgp_neighbor_max_prefix_missing,
+        _rule_bgp_neighbor_ttl_security_missing,
+        _rule_bgp_log_neighbor_changes_missing,
+        _rule_bgp_neighbor_description_missing,
+        _rule_ibgp_update_source_missing,
     ):
         findings.extend(rule(data))
     for finding in findings:

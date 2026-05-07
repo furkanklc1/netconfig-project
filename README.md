@@ -52,7 +52,7 @@ LLM katmanı eklendiğinde mevcut kural motoru çalışmaya devam edecek; AI yal
 ## Özellikler
 
 - **Cisco IOS** odaklı konfigürasyon parse desteği
-- 45 hazır kural (`R001..R045`)
+- 61 hazır kural (`R001..R061`)
 - 5 kategori: `security`, `routing`, `l2`, `compliance`, `operations`
 - 3 severity seviyesi: `low`, `medium`, `high`
 - Her bulgu için **aksiyon odaklı öneri metni**
@@ -79,7 +79,7 @@ Parser (regex + state machine)
 Structured Model (dataclass)
         |
         v
-Rule Engine (R001..R045)
+Rule Engine (R001..R061)
         |
         v
 Recommendation Layer
@@ -184,16 +184,17 @@ panelleri olarak sunar.
 
 ## Kural Seti
 
-Toplam **45** kural, 5 kategoride:
+Toplam **61** kural, 5 kategoride:
 
 ### Security
 
 `R002`, `R007`, `R008`, `R009`, `R010`, `R011`, `R012`, `R013`, `R014`, `R018`,
-`R020`, `R021`, `R022`, `R023`, `R027`, `R028`, `R031`, `R032`, `R040`, `R041`, `R044`
+`R020`, `R021`, `R022`, `R023`, `R027`, `R028`, `R031`, `R032`, `R040`, `R041`, `R044`,
+`R046`, `R047`, `R048`, `R049`, `R052`
 
 ### Routing
 
-`R005`, `R006`
+`R005`, `R006`, `R050`, `R051`, `R053`, `R054`, `R055`, `R056`, `R057`, `R058`, `R059`, `R060`, `R061`
 
 ### L2 / Switching
 
@@ -256,6 +257,22 @@ Toplam **45** kural, 5 kategoride:
 | R043 | low | Loopback arayüzü tanımlı değil |
 | R044 | low | Access portunda `no cdp enable` yok |
 | R045 | low | Access portunda `storm-control` tanımlı değil |
+| R046 | high | SNMP community kullanılıyor ama SNMPv3 user/group yok |
+| R047 | high | SNMPv2c community ACL ile kısıtlanmamış |
+| R048 | high | Control Plane Policing (CoPP) tanımlı değil |
+| R049 | high | RSA anahtar uzunluğu 2048 bit'in altında |
+| R050 | high | OSPF area için authentication tanımlı değil |
+| R051 | high | BGP neighbor için MD5 password tanımlı değil |
+| R052 | medium | L3 interface'inde uRPF (`ip verify unicast ... rx`) yok |
+| R053 | medium | OSPF `passive-interface default` tanımlı değil |
+| R054 | medium | OSPF `router-id` explicit tanımlı değil |
+| R055 | low | OSPF `log-adjacency-changes` tanımlı değil |
+| R056 | low | OSPF `auto-cost reference-bandwidth` tanımlı değil veya çok düşük |
+| R057 | high | BGP neighbor için `maximum-prefix` tanımlı değil (eBGP'de kritik) |
+| R058 | high | eBGP neighbor için `ttl-security hops` (GTSM) tanımlı değil |
+| R059 | low | BGP `bgp log-neighbor-changes` tanımlı değil |
+| R060 | low | BGP neighbor için `description` tanımlı değil |
+| R061 | medium | iBGP neighbor için `update-source` tanımlı değil |
 
 ---
 

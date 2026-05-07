@@ -10,6 +10,21 @@ app.config["SECRET_KEY"] = secrets.token_hex(16)
 
 _RESULT_CACHE: dict[str, dict] = {}
 
+_SEVERITY_RANK = {"high": 0, "medium": 1, "low": 2}
+
+
+def _sort_findings(findings: list[dict]) -> list[dict]:
+    return sorted(findings, key=lambda item: _SEVERITY_RANK.get(item.get("severity"), 99))
+
+
+def _count_severities(findings: list[dict]) -> dict[str, int]:
+    counts = {"high": 0, "medium": 0, "low": 0}
+    for item in findings:
+        sev = item.get("severity")
+        if sev in counts:
+            counts[sev] += 1
+    return counts
+
 
 def _decode_file(uploaded_file) -> str:
     file_bytes = uploaded_file.read()
@@ -38,10 +53,13 @@ def index():
         payload = _pop_result(token)
         if payload is None:
             payload = {}
+        report = payload.get("report", [])
+        diff_result = payload.get("diff_result")
         return render_template(
             "index.html",
-            report=payload.get("report", []),
-            diff_result=payload.get("diff_result"),
+            report=report,
+            severity_counts=_count_severities(report),
+            diff_result=diff_result,
             has_input=payload.get("has_input", False),
             error=payload.get("error", ""),
             uploaded_name=payload.get("uploaded_name", ""),
@@ -85,7 +103,12 @@ def index():
                 payload["has_input"] = True
                 old_text = _decode_file(old_file)
                 new_text = _decode_file(new_file)
-                payload["diff_result"] = audit_config_diff(old_text, new_text)
+                diff_result = audit_config_diff(old_text, new_text)
+                if diff_result and "new_findings" in diff_result:
+                    diff_result["new_findings"] = _sort_findings(
+                        diff_result["new_findings"]
+                    )
+                payload["diff_result"] = diff_result
     else:
         payload["analysis_mode"] = "single"
         uploaded_file = request.files.get("config_file")
@@ -98,7 +121,7 @@ def index():
             else:
                 payload["has_input"] = True
                 raw_config = _decode_file(uploaded_file)
-                payload["report"] = audit_config_text(raw_config)
+                payload["report"] = _sort_findings(audit_config_text(raw_config))
 
     token = _store_result(payload)
     return redirect(url_for("index", r=token))

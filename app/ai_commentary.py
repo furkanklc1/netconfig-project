@@ -135,6 +135,185 @@ def enrich_finding(finding: Finding) -> str:
             "VTY hatlarında yönetim ağına özel `access-class` ACL'i uygulayın. "
             "Uzaktan yönetim arayüzünü internete açık bırakmayın."
         )
+    if finding.rule_id == "R028":
+        return (
+            "`enable password` yerine `enable secret` kullanın. `enable password` "
+            "geri çevrilebilir Type 7 hash kullanır."
+        )
+    if finding.rule_id == "R029":
+        return (
+            "Erişim katmanı switchlerinde `ip dhcp snooping` etkinleştirin ve trust "
+            "portları DHCP server tarafına yönlendirin."
+        )
+    if finding.rule_id == "R030":
+        return (
+            "Dynamic ARP Inspection (`ip arp inspection vlan`) etkinleştirin ve "
+            "DHCP snooping ile birlikte ARP poisoning saldırılarını engelleyin."
+        )
+    if finding.rule_id == "R031":
+        return (
+            "VTY hatlarına `exec-timeout` (ör. 10 0) tanımlayın. Boşta kalan oturumlar "
+            "saldırganlar tarafından devralınabilir."
+        )
+    if finding.rule_id == "R032":
+        return (
+            "AUX hattını kapatın (`no exec`). Kullanılmayan modem/console portlarına "
+            "erişim güvenlik riski oluşturur."
+        )
+    if finding.rule_id == "R033":
+        return (
+            "`spanning-tree mode rapid-pvst` veya `mst` kullanın. Klasik PVST yakınsama "
+            "süresi modern ağlarda yetersizdir."
+        )
+    if finding.rule_id == "R034":
+        return (
+            "Trunk portlarda `switchport nonegotiate` ekleyerek DTP'yi kapatın. "
+            "Pasif DTP açıkları VLAN hopping saldırılarına yol açar."
+        )
+    if finding.rule_id == "R035":
+        return (
+            "Access portları VLAN 1 (default) yerine kullanıcı için tanımlanmış "
+            "ayrı bir VLAN'a alın. VLAN 1'i yönetim için de kullanmayın."
+        )
+    if finding.rule_id == "R036":
+        return (
+            "Access portlarda `switchport port-security` ile maksimum MAC adresi "
+            "ve violation politikası tanımlayın."
+        )
+    if finding.rule_id == "R037":
+        return (
+            "Access portlarda `spanning-tree bpduguard enable` veya global "
+            "`spanning-tree portfast bpduguard default` uygulayın."
+        )
+    if finding.rule_id == "R038":
+        return (
+            "`service tcp-keepalives-in` ve `service tcp-keepalives-out` ekleyerek "
+            "yarım açık TCP oturumlarının kaynak tüketmesini engelleyin."
+        )
+    if finding.rule_id == "R039":
+        return (
+            "`logging buffered <size> informational` ile yerel log buffer'ını "
+            "etkinleştirin. Bu, syslog erişilemediğinde olay analizi için kritiktir."
+        )
+    if finding.rule_id == "R040":
+        return (
+            "`ip ssh time-out 60` (ya da kuruma uygun değer) ekleyerek tamamlanmamış "
+            "SSH oturumları için zaman aşımı tanımlayın."
+        )
+    if finding.rule_id == "R041":
+        return (
+            "`ip ssh authentication-retries 3` ekleyerek SSH brute-force denemelerini "
+            "sınırlandırın."
+        )
+    if finding.rule_id == "R042":
+        return (
+            "`archive` modunu etkinleştirip `log config` ile konfigürasyon değişikliklerini "
+            "izleyin. Audit ve geri alma süreçleri kolaylaşır."
+        )
+    if finding.rule_id == "R043":
+        return (
+            "Routing protokollerinin stabil çalışması için en az bir Loopback "
+            "interface tanımlayın (yönetim ve router-id için)."
+        )
+    if finding.rule_id == "R044":
+        return (
+            "Edge / kullanıcı portlarında CDP'yi kapatın (`no cdp enable`). Cihaz "
+            "bilgilerinin sızmasını önler."
+        )
+    if finding.rule_id == "R045":
+        return (
+            "Access portlarda `storm-control broadcast/multicast level <eşik>` "
+            "tanımlayarak broadcast storm risklerini sınırlayın."
+        )
+    if finding.rule_id == "R046":
+        return (
+            "SNMPv3 yapılandırması ekleyin: `snmp-server group ... v3 priv` ve "
+            "`snmp-server user ... v3 auth sha ... priv aes 128 ...`. Plaintext "
+            "v1/v2c community kullanımını sonlandırın."
+        )
+    if finding.rule_id == "R047":
+        return (
+            "SNMPv2c kullanılacaksa community string'i ACL ile kısıtlayın "
+            "(`snmp-server community <name> RO <ACL>`). ACL yalnızca yönetim "
+            "ağındaki NMS sunucularına izin vermeli."
+        )
+    if finding.rule_id == "R048":
+        return (
+            "Control Plane Policing tanımlayın: management/routing trafiği için "
+            "`class-map`/`policy-map` oluşturup `control-plane` altında "
+            "`service-policy input <map>` uygulayın. CPU'yu DoS'tan korur."
+        )
+    if finding.rule_id == "R049":
+        return (
+            "RSA anahtarını yenileyin: `crypto key zeroize rsa` ardından "
+            "`crypto key generate rsa modulus 2048` (kurum politikasına göre 4096)."
+        )
+    if finding.rule_id == "R050":
+        return (
+            "OSPF area'ları için authentication tanımlayın: process altında "
+            "`area X authentication message-digest` ve interface'lerde "
+            "`ip ospf message-digest-key 1 md5 <key>`."
+        )
+    if finding.rule_id == "R051":
+        return (
+            "BGP neighbor'a MD5 password ekleyin: `neighbor <ip> password <key>`. "
+            "Mümkünse TCP-AO veya bağlantı için IPsec tercih edin."
+        )
+    if finding.rule_id == "R052":
+        return (
+            "WAN/edge L3 interface'lerinde uRPF etkinleştirin: "
+            "`ip verify unicast source reachable-via rx`. Asimetrik routing varsa "
+            "`reachable-via any` kullanılabilir."
+        )
+    if finding.rule_id == "R053":
+        return (
+            "OSPF process altında `passive-interface default` tanımlayın ve sadece "
+            "komşu kurulması gereken interface'leri `no passive-interface <intf>` ile "
+            "açın. Bu, kullanıcı VLAN'larına LSA sızmasını engeller."
+        )
+    if finding.rule_id == "R054":
+        return (
+            "OSPF process altında `router-id A.B.C.D` ile sabit Router-ID tanımlayın "
+            "(genelde Loopback IP'si). Aksi halde IP değişimleri komşulukları sıfırlar."
+        )
+    if finding.rule_id == "R055":
+        return (
+            "OSPF process altında `log-adjacency-changes detail` ekleyerek komşu state "
+            "geçişlerini syslog'a düşürün."
+        )
+    if finding.rule_id == "R056":
+        return (
+            "OSPF process altında `auto-cost reference-bandwidth 100000` (10G referans) "
+            "veya kuruma uygun bir değer tanımlayın. Aksi halde 1G+ linkler aynı maliyete "
+            "düşer ve path selection bozulur."
+        )
+    if finding.rule_id == "R057":
+        return (
+            "BGP neighbor için `neighbor <ip> maximum-prefix <N> [warning-only|restart]` "
+            "tanımlayın. eBGP peer'ları için bu zorunlu sayılmalıdır; route-leak / DoS "
+            "durumlarında peering'i otomatik koruma altına alır."
+        )
+    if finding.rule_id == "R058":
+        return (
+            "eBGP neighbor için `neighbor <ip> ttl-security hops <N>` (Generalized TTL "
+            "Security Mechanism) tanımlayın. Sadece doğrudan komşunun TTL'si kabul edilir, "
+            "uzak hop'tan gelen spoof TCP segmentleri filtrelenir."
+        )
+    if finding.rule_id == "R059":
+        return (
+            "BGP process altında `bgp log-neighbor-changes` ekleyerek peer up/down "
+            "olaylarını syslog'a düşürün. Outage analizi için gerekli."
+        )
+    if finding.rule_id == "R060":
+        return (
+            "Her BGP neighbor'a `neighbor <ip> description <peer-name>` ekleyin. "
+            "Operasyon ekibinin peer'ları hızlı tanımlamasını sağlar."
+        )
+    if finding.rule_id == "R061":
+        return (
+            "iBGP peering'lerinde `neighbor <ip> update-source Loopback0` kullanın. "
+            "Aksi halde tek bir transit link arızası iBGP oturumunu düşürür."
+        )
     return "Konfigürasyonu iş gereksinimine göre gözden geçirin."
 
 
