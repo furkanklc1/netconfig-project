@@ -1,7 +1,9 @@
 # NetConfig AI
 
 Cisco IOS konfigürasyon dosyalarını analiz eden, **akıllı** bir network config auditor.  
-`.txt` / `.cfg` dosyalarını okur, 45 farklı güvenlik / operasyon / uyumluluk kontrolü çalıştırır ve her bulgu için aksiyon odaklı öneri üretir.
+`.txt` / `.cfg` dosyalarını okur, 61 farklı güvenlik / operasyon / uyumluluk kontrolü çalıştırır ve her bulgu için aksiyon odaklı öneri üretir.
+
+> **Not:** Bu sürüm yalnızca **Cisco IOS / IOS XE** konfigürasyonlarını analiz eder. NX-OS, Arista EOS, Juniper Junos ve diğer vendor'lar için destek yol haritasındadır.
 
 > Bu proje aktif geliştirme aşamasındadır ve sürekli güncellenmektedir.
 
@@ -10,7 +12,7 @@ Cisco IOS konfigürasyon dosyalarını analiz eden, **akıllı** bir network con
 NetConfig AI'nın mevcut sürümü, **regex tabanlı bir parser**, **kural motoru** ve **kural bazlı öneri katmanından** oluşur:
 
 - **Parser** Cisco IOS söz dizimini state machine + regex ile yapısal modele çevirir.
-- **Rule Engine** 45 ayrı kontrolü çalıştırarak güvenlik/operasyon bulguları üretir.
+- **Rule Engine** 61 ayrı kontrolü çalıştırarak güvenlik/operasyon bulguları üretir.
 - **Recommendation Layer** her bulgu için aksiyon odaklı, sektör best-practice referanslı öneri üretir.
 
 Bu mimari sayesinde:
