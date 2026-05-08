@@ -6,6 +6,62 @@ from app.parser import parse_cisco_ios_config
 from app.rules import run_rules
 
 
+_IOS_MARKER_PATTERNS: list[str] = [
+    r"^\s*hostname\s+\S+",
+    r"^\s*interface\s+\S+",
+    r"^\s*line\s+(console|con|vty|aux)\b",
+    r"^\s*router\s+(ospf|bgp|eigrp|rip)\b",
+    r"^\s*ip\s+route\s+\S+",
+    r"^\s*vlan\s+\d+",
+    r"^\s*access-list\s+\S+",
+    r"^\s*spanning-tree\s+\S+",
+    r"^\s*service\s+(timestamps|password-encryption|finger|pad|tcp-keepalives)",
+    r"^\s*enable\s+(secret|password)\s+",
+    r"^\s*ip\s+http\s+(server|secure-server)",
+    r"^\s*aaa\s+new-model",
+    r"^\s*snmp-server\s+\S+",
+    r"^\s*crypto\s+(key|isakmp|ipsec|pki)",
+    r"^\s*boot\s+system\s+\S+",
+    r"^\s*version\s+\d+\.\d+",
+    r"^\s*switchport\s+(mode|access|trunk)",
+    r"^\s*ntp\s+server\s+\S+",
+    r"^\s*banner\s+motd\b",
+    r"^\s*ip\s+ssh\s+version\s+\d+",
+    r"^\s*logging\s+(host|buffered|trap)",
+    r"^\s*control-plane\s*$",
+]
+
+
+def is_cisco_ios_config(text: str) -> bool:
+    if not text or not text.strip():
+        return False
+    matched = 0
+    for pattern in _IOS_MARKER_PATTERNS:
+        if re.search(pattern, text, flags=re.MULTILINE | re.IGNORECASE):
+            matched += 1
+            if matched >= 3:
+                return True
+    return False
+
+
+def validate_config_text(text: str) -> tuple[bool, str]:
+    if not text or not text.strip():
+        return False, "Dosya boş görünüyor."
+    info = detect_device_info(text)
+    vendor = info.get("vendor", "Unknown")
+    if vendor not in ("Unknown", "Cisco IOS"):
+        return False, (
+            f"Yüklenen dosya {vendor} konfigürasyonu olarak algılandı. "
+            "NetConfig AI şu anda yalnızca Cisco IOS / IOS XE destekler."
+        )
+    if is_cisco_ios_config(text):
+        return True, ""
+    return False, (
+        "Yüklenen dosya geçerli bir Cisco IOS konfigürasyonu olarak görünmüyor. "
+        "Lütfen `show running-config` çıktısı içeren bir .txt veya .cfg dosyası yükleyin."
+    )
+
+
 def _extract_hostname(text: str) -> str | None:
     for raw in text.splitlines():
         line = raw.strip()
@@ -44,6 +100,71 @@ def _platform_from_boot_image(image_name: str) -> str | None:
     return None
 
 
+_VENDOR_PATTERNS: list[tuple[str, str]] = [
+    (
+        "Juniper",
+        r"^\s*set\s+(system|interfaces|protocols|routing-options|firewall|chassis)\s+\S+",
+    ),
+    (
+        "Huawei",
+        r"^\s*sysname\s+\S+|^\s*display\s+current-configuration|^\s*super\s+password\s+",
+    ),
+    (
+        "Cisco NX-OS",
+        r"^\s*feature\s+(ospf|bgp|eigrp|pim|hsrp|lacp|interface-vlan|vpc|telnet|ssh)"
+        r"|^\s*role\s+name\s+\S+"
+        r"|^\s*vpc\s+domain\s+\d+"
+        r"|^\s*system\s+jumbomtu\s+\d+"
+        r"|^\s*boot\s+nxos\s+(bootflash:|nxos\.)"
+        r"|^\s*username\s+\S+\s+password\s+\S+\s+role\s+\S+",
+    ),
+    (
+        "HPE Aruba",
+        r"^\s*!\s*Version\s+ArubaOS"
+        r"|^\s*!\s*ArubaOS"
+        r"|^\s*!\s*Aruba(?:OS|-CX|\s)"
+        r"|^\s*!\s*HPE\s+"
+        r"|^\s*;\s*Version\s+\""
+        r"|^\s*Running\s+configuration:\s*$"
+        r"|^\s*password\s+(manager|operator)\s+user-name"
+        r"|^\s*module\s+\d+\s+type\s+\S+"
+        r"|^\s*include-credentials\s*$"
+        r"|^\s*aaa\s+server-group\s+\""
+        r"|^\s*wlan\s+ssid-profile\s+"
+        r"|^\s*ap\s+system-profile\s+"
+        r"|^\s*user\s+\S+\s+group\s+\S+\s+password\s+ciphertext"
+        r"|^\s*ssh\s+server\s+vrf\s+\S+"
+        r"|^\s*vlan\s+access\s+\d+"
+        r"|^\s*interface\s+\d+/\d+/\d+\s*$"
+        r"|^\s*interface\s+lag\s+\d+"
+        r"|^\s*untagged\s+vlan\s+\d+",
+    ),
+    (
+        "Dell OS",
+        r"^\s*system\s+identifier\s+\d+"
+        r"|^\s*!\s*Dell\s+(EMC|OS|Force10|Networking)"
+        r"|^\s*interface\s+ethernet\s*\d+/\d+/\d+"
+        r"|^\s*username\s+\S+\s+password\s+\S+\s+role\s+sysadmin"
+        r"|^\s*os10#\s*$",
+    ),
+    (
+        "Arista EOS",
+        r"^\s*!\s*device:\s+\S+"
+        r"|^\s*!\s+Command:\s+show\s+running-config"
+        r"|^\s*daemon\s+TerminAttr"
+        r"|^\s*(no\s+)?aaa\s+root\s+(secret|disable)"
+        r"|^\s*username\s+\S+\s+(privilege\s+\d+\s+)?role\s+\S+\s+secret"
+        r"|^\s*transceiver\s+qsfp\s+default-mode"
+        r"|^\s*event-handler\s+\S+"
+        r"|^\s*event-monitor\s+\S+"
+        r"|^\s*tap\s+aggregation"
+        r"|^\s*management\s+api\s+http-commands"
+        r"|^\s*queue-monitor\s+streaming"
+        r"|^\s*mlag\s+configuration",
+    ),
+]
+
+
 def detect_device_info(text: str) -> dict:
     info: dict = {
         "vendor": "Unknown",
@@ -52,47 +173,31 @@ def detect_device_info(text: str) -> dict:
         "boot_image": None,
     }
 
-    has_set_system = re.search(
-        r"^\s*set\s+system\s+host-name\b",
-        text,
-        flags=re.MULTILINE | re.IGNORECASE,
-    )
-    has_sysname = re.search(
-        r"^\s*sysname\s+\S+",
-        text,
-        flags=re.MULTILINE | re.IGNORECASE,
-    )
-    has_feature_block = re.search(
-        r"^\s*feature\s+\w+",
-        text,
-        flags=re.MULTILINE | re.IGNORECASE,
-    )
-    has_terminattr = re.search(
-        r"^\s*daemon\s+TerminAttr|^\s*aaa\s+root\s+secret",
-        text,
-        flags=re.MULTILINE | re.IGNORECASE,
-    )
-    has_cisco_ios_markers = re.search(
-        r"^\s*(service\s+timestamps|enable\s+secret|service\s+password-encryption)",
-        text,
-        flags=re.MULTILINE | re.IGNORECASE,
-    )
-    has_hostname = re.search(
-        r"^\s*hostname\s+\S+",
-        text,
-        flags=re.MULTILINE | re.IGNORECASE,
-    )
+    for vendor_label, pattern in _VENDOR_PATTERNS:
+        if re.search(pattern, text, flags=re.MULTILINE | re.IGNORECASE):
+            info["vendor"] = vendor_label
+            break
 
-    if has_set_system:
-        info["vendor"] = "Juniper"
-    elif has_sysname:
-        info["vendor"] = "Huawei"
-    elif has_terminattr:
-        info["vendor"] = "Arista EOS"
-    elif has_feature_block and has_hostname:
-        info["vendor"] = "Cisco NX-OS"
-    elif has_cisco_ios_markers or has_hostname:
-        info["vendor"] = "Cisco IOS"
+    if info["vendor"] == "Unknown":
+        has_cisco_ios_markers = re.search(
+            r"^\s*(aaa\s+new-model"
+            r"|service\s+(timestamps|password-encryption)"
+            r"|line\s+(console|con|vty|aux)\s+\d+"
+            r"|enable\s+secret\s+"
+            r"|ip\s+http\s+server"
+            r"|crypto\s+key\s+generate\s+rsa)",
+            text,
+            flags=re.MULTILINE | re.IGNORECASE,
+        )
+        has_hostname = re.search(
+            r"^\s*hostname\s+\S+",
+            text,
+            flags=re.MULTILINE | re.IGNORECASE,
+        )
+        if has_cisco_ios_markers:
+            info["vendor"] = "Cisco IOS"
+        elif has_hostname:
+            info["vendor"] = "Cisco IOS"
 
     version_match = re.search(
         r"^\s*version\s+(\d+\.\d+(?:\([^)]+\))?[a-zA-Z0-9.]*)",

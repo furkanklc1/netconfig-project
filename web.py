@@ -1,14 +1,21 @@
 import secrets
 import uuid
+from collections import OrderedDict
 
 from flask import Flask, redirect, render_template, request, url_for
 
-from app.service import audit_config_diff, audit_config_text, detect_device_info
+from app.service import (
+    audit_config_diff,
+    audit_config_text,
+    detect_device_info,
+    validate_config_text,
+)
 
 app = Flask(__name__, template_folder="app/templates")
 app.config["SECRET_KEY"] = secrets.token_hex(16)
 
-_RESULT_CACHE: dict[str, dict] = {}
+_RESULT_CACHE: "OrderedDict[str, dict]" = OrderedDict()
+_RESULT_CACHE_MAX = 64
 
 _SEVERITY_RANK = {"high": 0, "medium": 1, "low": 2}
 
@@ -37,6 +44,8 @@ def _decode_file(uploaded_file) -> str:
 def _store_result(payload: dict) -> str:
     token = uuid.uuid4().hex
     _RESULT_CACHE[token] = payload
+    while len(_RESULT_CACHE) > _RESULT_CACHE_MAX:
+        _RESULT_CACHE.popitem(last=False)
     return token
 
 
@@ -102,15 +111,30 @@ def index():
             ].lower().endswith(valid_ext):
                 payload["error"] = "Sadece .txt veya .cfg uzantılı dosyalar kabul edilir."
             else:
-                payload["has_input"] = True
                 old_text = _decode_file(old_file)
                 new_text = _decode_file(new_file)
-                diff_result = audit_config_diff(old_text, new_text)
-                if diff_result and "new_findings" in diff_result:
-                    diff_result["new_findings"] = _sort_findings(
-                        diff_result["new_findings"]
+                old_valid, old_error = validate_config_text(old_text)
+                new_valid, new_error = validate_config_text(new_text)
+                if not old_valid:
+                    payload["error"] = (
+                        f"Eski dosya ('{payload['old_uploaded_name']}'): {old_error}"
                     )
-                payload["diff_result"] = diff_result
+                    payload["old_uploaded_name"] = ""
+                    payload["new_uploaded_name"] = ""
+                elif not new_valid:
+                    payload["error"] = (
+                        f"Yeni dosya ('{payload['new_uploaded_name']}'): {new_error}"
+                    )
+                    payload["old_uploaded_name"] = ""
+                    payload["new_uploaded_name"] = ""
+                else:
+                    payload["has_input"] = True
+                    diff_result = audit_config_diff(old_text, new_text)
+                    if diff_result and "new_findings" in diff_result:
+                        diff_result["new_findings"] = _sort_findings(
+                            diff_result["new_findings"]
+                        )
+                    payload["diff_result"] = diff_result
     else:
         payload["analysis_mode"] = "single"
         uploaded_file = request.files.get("config_file")
@@ -121,10 +145,15 @@ def index():
             if not payload["uploaded_name"].lower().endswith((".txt", ".cfg")):
                 payload["error"] = "Sadece .txt veya .cfg uzantılı dosyalar kabul edilir."
             else:
-                payload["has_input"] = True
                 raw_config = _decode_file(uploaded_file)
-                payload["report"] = _sort_findings(audit_config_text(raw_config))
-                payload["device_info"] = detect_device_info(raw_config)
+                is_valid, error_message = validate_config_text(raw_config)
+                if not is_valid:
+                    payload["error"] = error_message
+                    payload["uploaded_name"] = ""
+                else:
+                    payload["has_input"] = True
+                    payload["report"] = _sort_findings(audit_config_text(raw_config))
+                    payload["device_info"] = detect_device_info(raw_config)
 
     token = _store_result(payload)
     return redirect(url_for("index", r=token))

@@ -50,9 +50,6 @@
       .finding-item + .finding-item {
         margin-top: 1rem;
       }
-      .finding-item.hidden {
-        display: none !important;
-      }
       .severity-dot {
         width: 9px;
         height: 9px;
@@ -100,47 +97,44 @@
         background: #eff6ff;
         color: #1e3a8a;
       }
+      .severity-count-pill {
+        border-radius: 999px;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .severity-count-pill.high {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
+      .severity-count-pill.medium {
+        background: #ffedd5;
+        color: #9a3412;
+        border: 1px solid #fed7aa;
+      }
+      .severity-count-pill.low {
+        background: #dbeafe;
+        color: #1e3a8a;
+        border: 1px solid #bfdbfe;
+      }
       @keyframes pulse-high {
-        0% {
-          box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55);
-          opacity: 1;
-        }
-        70% {
-          box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
-          opacity: 0.75;
-        }
-        100% {
-          box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
-          opacity: 1;
-        }
+        0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55); opacity: 1; }
+        70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); opacity: 0.75; }
+        100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); opacity: 1; }
       }
       @keyframes pulse-medium {
-        0% {
-          box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.55);
-          opacity: 1;
-        }
-        70% {
-          box-shadow: 0 0 0 10px rgba(217, 119, 6, 0);
-          opacity: 0.75;
-        }
-        100% {
-          box-shadow: 0 0 0 0 rgba(217, 119, 6, 0);
-          opacity: 1;
-        }
+        0% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.55); opacity: 1; }
+        70% { box-shadow: 0 0 0 10px rgba(217, 119, 6, 0); opacity: 0.75; }
+        100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); opacity: 1; }
       }
       @keyframes pulse-low {
-        0% {
-          box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.55);
-          opacity: 1;
-        }
-        70% {
-          box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
-          opacity: 0.75;
-        }
-        100% {
-          box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
-          opacity: 1;
-        }
+        0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.55); opacity: 1; }
+        70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); opacity: 0.75; }
+        100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); opacity: 1; }
       }
       code {
         background: #f1f5f9;
@@ -197,100 +191,93 @@
       .diff-child {
         font-size: 0.8rem;
       }
+      .active-file-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.6rem;
+        padding: 0.45rem 0.8rem;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        border-radius: 999px;
+        font-size: 0.85rem;
+      }
+      .active-file-indicator .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 0 rgba(16, 185, 129, 0.6);
+        animation: pulse-active 1.6s infinite;
+      }
+      @keyframes pulse-active {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+        70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      }
       .device-badge {
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
-        padding: 0.25rem 0.6rem;
+        padding: 0.25rem 0.65rem;
         border-radius: 999px;
-        font-size: 0.8rem;
-        background: #e0e7ff;
-        color: #1e3a8a;
-        border: 1px solid #c7d2fe;
+        font-size: 0.78rem;
+        font-weight: 500;
+        margin-right: 0.4rem;
+        margin-top: 0.35rem;
       }
-      .device-badge.platform {
-        background: #ecfeff;
-        color: #155e75;
-        border-color: #a5f3fc;
-      }
-      .device-badge.version {
-        background: #f0fdf4;
-        color: #166534;
-        border-color: #bbf7d0;
-      }
-      .device-badge.boot {
-        background: #f8fafc;
-        color: #334155;
-        border-color: #cbd5e1;
-      }
-      .device-badge code {
-        background: transparent;
-        padding: 0;
-        color: inherit;
-      }
+      .device-badge.vendor { background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe; }
+      .device-badge.platform { background: #ecfeff; color: #155e75; border: 1px solid #a5f3fc; }
+      .device-badge.os { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+      .device-badge.image { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
       .category-filter {
         display: flex;
         flex-wrap: wrap;
         gap: 0.4rem;
-        padding: 0.75rem 1.1rem 0.25rem 1.1rem;
+        padding: 0 0.25rem;
       }
       .category-filter button {
         border: 1px solid #cbd5e1;
-        background: #f8fafc;
-        border-radius: 999px;
-        padding: 0.25rem 0.85rem;
-        font-size: 0.82rem;
+        background: #fff;
         color: #334155;
+        border-radius: 999px;
+        padding: 0.3rem 0.85rem;
+        font-size: 0.82rem;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition: all 0.15s ease-in-out;
       }
       .category-filter button:hover {
-        background: #e2e8f0;
+        background: #f1f5f9;
       }
       .category-filter button.active {
         background: #4f46e5;
         color: #fff;
-        border-color: #4f46e5;
+        border-color: #4338ca;
       }
       .category-pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.15rem 0.55rem;
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.12rem 0.55rem;
         border-radius: 999px;
-        font-size: 0.72rem;
-        font-weight: 500;
+        margin-left: 0.4rem;
         text-transform: uppercase;
-        letter-spacing: 0.02em;
+        letter-spacing: 0.03em;
       }
-      .category-pill.security {
-        background: #fee2e2;
-        color: #991b1b;
-        border: 1px solid #fecaca;
-      }
-      .category-pill.routing {
-        background: #dbeafe;
-        color: #1e40af;
-        border: 1px solid #bfdbfe;
-      }
-      .category-pill.l2 {
-        background: #ede9fe;
-        color: #5b21b6;
-        border: 1px solid #ddd6fe;
-      }
-      .category-pill.compliance {
-        background: #dcfce7;
-        color: #166534;
-        border: 1px solid #bbf7d0;
-      }
-      .category-pill.operations {
-        background: #e5e7eb;
-        color: #1f2937;
-        border: 1px solid #d1d5db;
-      }
-      .category-pill.general {
-        background: #f1f5f9;
-        color: #334155;
-        border: 1px solid #cbd5e1;
+      .category-pill.security { background: #fee2e2; color: #991b1b; }
+      .category-pill.routing { background: #ede9fe; color: #5b21b6; }
+      .category-pill.l2 { background: #ccfbf1; color: #115e59; }
+      .category-pill.compliance { background: #fef3c7; color: #92400e; }
+      .category-pill.operations { background: #e0f2fe; color: #075985; }
+      .category-pill.general { background: #e2e8f0; color: #334155; }
+      .mismatch-warning {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        border-radius: 0.6rem;
+        padding: 0.6rem 0.85rem;
+        font-size: 0.88rem;
       }
     </style>
   </head>
@@ -319,6 +306,12 @@
               >
               <button class="btn btn-primary px-4" type="submit">Analiz Et</button>
             </div>
+            {% if uploaded_name %}
+            <div class="active-file-indicator">
+              <span class="dot"></span>
+              <span>Şu an analiz edilen: <strong>{{ uploaded_name }}</strong></span>
+            </div>
+            {% endif %}
           </form>
         </div>
       </section>
@@ -340,6 +333,12 @@
               </div>
             </div>
             <button class="btn btn-outline-primary px-4 mt-3" type="submit">Diff Analizi Yap</button>
+            {% if old_uploaded_name and new_uploaded_name %}
+            <div class="active-file-indicator">
+              <span class="dot"></span>
+              <span>Karşılaştırılan: <strong>{{ old_uploaded_name }}</strong> ↔ <strong>{{ new_uploaded_name }}</strong></span>
+            </div>
+            {% endif %}
           </form>
         </div>
       </section>
@@ -352,16 +351,18 @@
       <div class="alert alert-info border-0 shadow-sm">
         <div>Yüklenen dosya: <strong>{{ uploaded_name }}</strong></div>
         {% if device_info %}
-        <div class="d-flex flex-wrap gap-2 mt-2">
-          <span class="device-badge vendor">Vendor: <strong>{{ device_info.vendor }}</strong></span>
+        <div class="mt-2">
+          {% if device_info.vendor and device_info.vendor != "Unknown" %}
+          <span class="device-badge vendor">Vendor: {{ device_info.vendor }}</span>
+          {% endif %}
           {% if device_info.platform %}
-          <span class="device-badge platform">Platform: <strong>{{ device_info.platform }}</strong></span>
+          <span class="device-badge platform">Platform: {{ device_info.platform }}</span>
           {% endif %}
           {% if device_info.os_version %}
-          <span class="device-badge version">OS: <strong>{{ device_info.os_version }}</strong></span>
+          <span class="device-badge os">OS: {{ device_info.os_version }}</span>
           {% endif %}
           {% if device_info.boot_image %}
-          <span class="device-badge boot">Boot: <code>{{ device_info.boot_image }}</code></span>
+          <span class="device-badge image">Image: {{ device_info.boot_image }}</span>
           {% endif %}
         </div>
         {% endif %}
@@ -370,36 +371,53 @@
 
       {% if old_uploaded_name and new_uploaded_name %}
       <div class="alert alert-info border-0 shadow-sm">
-        <div>
-          Eski dosya: <strong>{{ old_uploaded_name }}</strong> |
-          Yeni dosya: <strong>{{ new_uploaded_name }}</strong>
-        </div>
-        {% if diff_result and (diff_result.old_device_info or diff_result.new_device_info) %}
-        <div class="row g-2 mt-2">
+        <div class="row g-3">
           <div class="col-md-6">
-            <div class="text-muted small mb-1">Eski cihaz</div>
-            <div class="d-flex flex-wrap gap-2">
-              <span class="device-badge vendor">{{ diff_result.old_device_info.vendor }}</span>
+            <div class="text-muted small">Eski dosya</div>
+            <div><strong>{{ old_uploaded_name }}</strong></div>
+            {% if diff_result and diff_result.old_device_info %}
+            <div class="mt-2">
+              {% if diff_result.old_device_info.vendor and diff_result.old_device_info.vendor != "Unknown" %}
+              <span class="device-badge vendor">Vendor: {{ diff_result.old_device_info.vendor }}</span>
+              {% endif %}
               {% if diff_result.old_device_info.platform %}
-              <span class="device-badge platform">{{ diff_result.old_device_info.platform }}</span>
+              <span class="device-badge platform">Platform: {{ diff_result.old_device_info.platform }}</span>
               {% endif %}
               {% if diff_result.old_device_info.os_version %}
-              <span class="device-badge version">v{{ diff_result.old_device_info.os_version }}</span>
+              <span class="device-badge os">OS: {{ diff_result.old_device_info.os_version }}</span>
+              {% endif %}
+              {% if diff_result.old_device_info.boot_image %}
+              <span class="device-badge image">Image: {{ diff_result.old_device_info.boot_image }}</span>
               {% endif %}
             </div>
+            {% endif %}
           </div>
           <div class="col-md-6">
-            <div class="text-muted small mb-1">Yeni cihaz</div>
-            <div class="d-flex flex-wrap gap-2">
-              <span class="device-badge vendor">{{ diff_result.new_device_info.vendor }}</span>
+            <div class="text-muted small">Yeni dosya</div>
+            <div><strong>{{ new_uploaded_name }}</strong></div>
+            {% if diff_result and diff_result.new_device_info %}
+            <div class="mt-2">
+              {% if diff_result.new_device_info.vendor and diff_result.new_device_info.vendor != "Unknown" %}
+              <span class="device-badge vendor">Vendor: {{ diff_result.new_device_info.vendor }}</span>
+              {% endif %}
               {% if diff_result.new_device_info.platform %}
-              <span class="device-badge platform">{{ diff_result.new_device_info.platform }}</span>
+              <span class="device-badge platform">Platform: {{ diff_result.new_device_info.platform }}</span>
               {% endif %}
               {% if diff_result.new_device_info.os_version %}
-              <span class="device-badge version">v{{ diff_result.new_device_info.os_version }}</span>
+              <span class="device-badge os">OS: {{ diff_result.new_device_info.os_version }}</span>
+              {% endif %}
+              {% if diff_result.new_device_info.boot_image %}
+              <span class="device-badge image">Image: {{ diff_result.new_device_info.boot_image }}</span>
               {% endif %}
             </div>
+            {% endif %}
           </div>
+        </div>
+        {% if diff_result and diff_result.mismatch_warnings %}
+        <div class="mt-3 d-grid gap-2">
+          {% for warning in diff_result.mismatch_warnings %}
+          <div class="mismatch-warning">⚠ {{ warning }}</div>
+          {% endfor %}
         </div>
         {% endif %}
       </div>
@@ -408,34 +426,31 @@
       {% if report %}
       <section class="card soft-card findings-wrap">
         <div class="card-header bg-white border-0 pt-4 px-4 findings-head">
-          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h3 class="h5 mb-0">Bulgu Listesi</h3>
-            <div class="d-flex flex-wrap align-items-center gap-2">
-              <span class="severity-pill high">
-                <span class="severity-dot severity-high"></span>
-                <strong>{{ severity_counts.high }}</strong> high
-              </span>
-              <span class="severity-pill medium">
-                <span class="severity-dot severity-medium"></span>
-                <strong>{{ severity_counts.medium }}</strong> medium
-              </span>
-              <span class="severity-pill low">
-                <span class="severity-dot severity-low"></span>
-                <strong>{{ severity_counts.low }}</strong> low
-              </span>
+            <div class="d-flex flex-wrap gap-2">
+              {% if severity_counts and severity_counts.high %}
+              <span class="severity-count-pill high">{{ severity_counts.high }} high</span>
+              {% endif %}
+              {% if severity_counts and severity_counts.medium %}
+              <span class="severity-count-pill medium">{{ severity_counts.medium }} medium</span>
+              {% endif %}
+              {% if severity_counts and severity_counts.low %}
+              <span class="severity-count-pill low">{{ severity_counts.low }} low</span>
+              {% endif %}
               <span class="badge text-bg-light border text-dark rounded-pill px-3 py-2">{{ report|length }} bulgu</span>
             </div>
           </div>
+          <div class="category-filter mt-3">
+            <button type="button" class="active" data-category="all">Tümü</button>
+            <button type="button" data-category="security">Security</button>
+            <button type="button" data-category="routing">Routing</button>
+            <button type="button" data-category="l2">L2 / Switching</button>
+            <button type="button" data-category="compliance">Compliance</button>
+            <button type="button" data-category="operations">Operations</button>
+          </div>
         </div>
-        <div class="category-filter">
-          <button type="button" class="filter-btn active" data-filter="all">Tümü</button>
-          <button type="button" class="filter-btn" data-filter="security">Security</button>
-          <button type="button" class="filter-btn" data-filter="routing">Routing</button>
-          <button type="button" class="filter-btn" data-filter="l2">L2 / Switching</button>
-          <button type="button" class="filter-btn" data-filter="compliance">Compliance</button>
-          <button type="button" class="filter-btn" data-filter="operations">Operations</button>
-        </div>
-        <ul class="list-group list-group-flush px-3 py-3 bg-transparent">
+        <ul class="list-group list-group-flush px-3 py-3 bg-transparent" id="findings-list">
           {% for item in report %}
           <li class="list-group-item finding-item {{ item.severity }}" data-category="{{ item.category }}">
             <div class="d-flex justify-content-between align-items-start gap-3">
@@ -451,8 +466,8 @@
                 <span class="severity-text">{{ item.severity }}</span>
               </div>
             </div>
-            <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
-              <div class="small text-muted">{{ item.rule_id }}</div>
+            <div class="small text-muted mt-2">
+              {{ item.rule_id }}
               <span class="category-pill {{ item.category }}">{{ item.category }}</span>
             </div>
             <div class="small mt-2"><code>{{ item.context }}</code></div>
@@ -478,16 +493,6 @@
           </div>
         </div>
         <div class="card-body px-4 py-3">
-          {% if diff_result.mismatch_warnings %}
-          <div class="alert alert-warning border-0 shadow-sm">
-            <ul class="mb-0">
-              {% for warning in diff_result.mismatch_warnings %}
-              <li>{{ warning }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% endif %}
-
           <h4 class="h6 mb-2">Değiştirilen Satırlar (Eski → Yeni)</h4>
           {% if diff_result.modified_pairs %}
           <div class="d-grid gap-2 mb-4">
@@ -566,10 +571,10 @@
                   <span class="severity-text">{{ item.severity }}</span>
                 </div>
               </div>
-              <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
-                <div class="small text-muted">{{ item.rule_id }}</div>
+              <div class="small text-muted mt-1">
+                {{ item.rule_id }}
                 <span class="category-pill {{ item.category }}">{{ item.category }}</span>
-                <code class="small">{{ item.context }}</code>
+                - <code>{{ item.context }}</code>
               </div>
             </li>
             {% endfor %}
@@ -597,20 +602,21 @@
     </div>
     <script>
       document.addEventListener('click', function (event) {
-        var btn = event.target.closest('.filter-btn');
-        if (!btn) return;
-        var wrap = btn.closest('.findings-wrap');
-        if (!wrap) return;
-        wrap.querySelectorAll('.filter-btn').forEach(function (b) {
-          b.classList.remove('active');
+        const button = event.target.closest('.category-filter button');
+        if (!button) return;
+        const filter = button.dataset.category;
+        const container = button.closest('.category-filter');
+        if (!container) return;
+        container.querySelectorAll('button').forEach(function (btn) {
+          btn.classList.toggle('active', btn === button);
         });
-        btn.classList.add('active');
-        var filter = btn.dataset.filter;
-        wrap.querySelectorAll('.finding-item').forEach(function (item) {
-          if (filter === 'all' || item.dataset.category === filter) {
-            item.classList.remove('hidden');
+        const list = document.getElementById('findings-list');
+        if (!list) return;
+        list.querySelectorAll('li.finding-item').forEach(function (li) {
+          if (filter === 'all' || li.dataset.category === filter) {
+            li.style.display = '';
           } else {
-            item.classList.add('hidden');
+            li.style.display = 'none';
           }
         });
       });

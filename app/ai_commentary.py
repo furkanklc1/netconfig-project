@@ -55,7 +55,7 @@ def enrich_finding(finding: Finding) -> str:
     if finding.rule_id == "R011":
         return (
             "`service password-encryption` etkinleştirerek düz metin görünen parolaları "
-            "maskelereyin. Mümkünse modern kimlik doğrulama yöntemlerini tercih edin."
+            "maskeleyin. Mümkünse modern kimlik doğrulama yöntemlerini tercih edin."
         )
     if finding.rule_id == "R012":
         return (

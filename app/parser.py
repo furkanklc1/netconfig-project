@@ -330,10 +330,14 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             )
             continue
 
-        if in_console_line and re.match(
-            r"^exec-timeout\s+\d+(\s+\d+)?$", line, flags=re.IGNORECASE
-        ):
-            data.console_exec_timeout_set = True
+        console_timeout_match = re.match(
+            r"^exec-timeout\s+(\d+)(?:\s+(\d+))?$", line, flags=re.IGNORECASE
+        )
+        if in_console_line and console_timeout_match:
+            minutes = int(console_timeout_match.group(1))
+            seconds = int(console_timeout_match.group(2) or 0)
+            if minutes > 0 or seconds > 0:
+                data.console_exec_timeout_set = True
             continue
 
         if in_vty_line and re.match(
@@ -348,10 +352,14 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             data.vty_has_access_class = True
             continue
 
-        if in_vty_line and re.match(
-            r"^exec-timeout\s+\d+(\s+\d+)?$", line, flags=re.IGNORECASE
-        ):
-            data.vty_exec_timeout_set = True
+        vty_timeout_match = re.match(
+            r"^exec-timeout\s+(\d+)(?:\s+(\d+))?$", line, flags=re.IGNORECASE
+        )
+        if in_vty_line and vty_timeout_match:
+            minutes = int(vty_timeout_match.group(1))
+            seconds = int(vty_timeout_match.group(2) or 0)
+            if minutes > 0 or seconds > 0:
+                data.vty_exec_timeout_set = True
             continue
 
         if in_aux_line and re.match(r"^no\s+exec$", line, flags=re.IGNORECASE):
