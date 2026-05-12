@@ -63,6 +63,13 @@ RULE_CATEGORIES: dict[str, str] = {
     "R059": "routing",
     "R060": "routing",
     "R061": "routing",
+    "R062": "security",
+    "R063": "security",
+    "R064": "security",
+    "R065": "security",
+    "R066": "security",
+    "R067": "security",
+    "R068": "security",
 }
 
 

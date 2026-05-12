@@ -1,4 +1,5 @@
 from app.models import Finding
+from app.secret_scanner import mask_credentials_in_line
 
 
 def enrich_finding(finding: Finding) -> str:
@@ -314,6 +315,50 @@ def enrich_finding(finding: Finding) -> str:
             "iBGP peering'lerinde `neighbor <ip> update-source Loopback0` kullanın. "
             "Aksi halde tek bir transit link arızası iBGP oturumunu düşürür."
         )
+    if finding.rule_id == "R062":
+        return (
+            "Cisco Type 7 password reversible'dır ve internetteki araçlarla saniyeler "
+            "içinde decode edilir. `service password-encryption` Type 7 üretir; gerçek "
+            "koruma için `enable algorithm-type scrypt secret <pw>` ile Type 8/9 hash "
+            "veya merkezi AAA kullanın."
+        )
+    if finding.rule_id == "R063":
+        return (
+            "Type 0 (cleartext) password kabul edilemez. `enable secret <pw>` veya "
+            "`username X secret <pw>` ile Type 5/8/9 hash kullanın. Mevcut satırı "
+            "konfigürasyon vault'una taşıyın."
+        )
+    if finding.rule_id == "R064":
+        return (
+            "TACACS+ key'i kalıcı olarak korumak için `key config-key password-encrypt` "
+            "ile master key tanımlayıp `tacacs-server key 7 <enc>` kullanın. Tercihen "
+            "secret'i Ansible Vault / HashiCorp Vault gibi bir kaynaktan deploy edin."
+        )
+    if finding.rule_id == "R065":
+        return (
+            "RADIUS key'i Type 7 encrypt edip cihazda master key tanımlayın. Daha güçlü "
+            "koruma için RadSec (RADIUS over TLS) ile karşılıklı sertifika doğrulamasına "
+            "geçin."
+        )
+    if finding.rule_id == "R066":
+        return (
+            "BGP neighbor password'ünü `neighbor <ip> password 7 <enc>` ile encrypt edin "
+            "ve mümkünse TCP Authentication Option (TCP-AO) kullanın. Cleartext password "
+            "show running-config çıktısında okunur."
+        )
+    if finding.rule_id == "R067":
+        return (
+            "OSPF MD5 anahtarını `service password-encryption` etkinken `ip ospf "
+            "message-digest-key 1 md5 7 <enc>` formatında saklayın veya keychain "
+            "kullanarak rotasyonu kolaylaştırın. Mümkünse HMAC-SHA-256 (Cisco IOS XE) "
+            "destekleniyorsa onu tercih edin."
+        )
+    if finding.rule_id == "R068":
+        return (
+            "IPsec/ISAKMP pre-shared key'i `crypto isakmp key 6 <enc> address <peer>` "
+            "ile Type 6 (AES) encrypt edin ve `password encryption aes` ile master key "
+            "tanımlayın. Production için PSK yerine sertifika tabanlı IKE'ye geçin."
+        )
     return "Konfigürasyonu iş gereksinimine göre gözden geçirin."
 
 
@@ -323,7 +368,7 @@ def format_report(findings: list[Finding]) -> list[dict]:
             "rule_id": item.rule_id,
             "severity": item.severity,
             "message": item.message,
-            "context": item.context,
+            "context": mask_credentials_in_line(item.context),
             "category": item.category,
             "recommendation": enrich_finding(item),
         }

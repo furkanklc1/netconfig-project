@@ -20,6 +20,29 @@ def _parse_vlan_token(token: str) -> list[int]:
     return [int(token)] if token.isdigit() else []
 
 
+_IPV4_RE = re.compile(r"^\d+\.\d+\.\d+\.\d+$")
+
+
+def _consume_acl_endpoint(pieces: list[str], idx: int) -> tuple[str, int]:
+    if idx >= len(pieces):
+        return "", idx
+    first = pieces[idx]
+    lower = first.lower()
+    if lower == "any":
+        return "any", idx + 1
+    if lower == "host" and idx + 1 < len(pieces):
+        return f"host {pieces[idx + 1]}", idx + 2
+    if _IPV4_RE.match(first) and idx + 1 < len(pieces) and _IPV4_RE.match(pieces[idx + 1]):
+        return f"{first} {pieces[idx + 1]}", idx + 2
+    return first, idx + 1
+
+
+def _parse_acl_src_dst(pieces: list[str]) -> tuple[str, str]:
+    src, next_idx = _consume_acl_endpoint(pieces, 0)
+    dst, _ = _consume_acl_endpoint(pieces, next_idx)
+    return src, dst
+
+
 def parse_cisco_ios_config(text: str) -> ConfigData:
     data = ConfigData()
     current_interface: Interface | None = None
@@ -198,7 +221,7 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             continue
 
         if re.match(
-            r"^snmp-server\s+(user|group)\s+\S+\s+\S+\s+v3\b",
+            r"^snmp-server\s+(?:user\s+\S+(?:\s+\S+)?|group\s+\S+)\s+v3\b",
             line,
             flags=re.IGNORECASE,
         ):
@@ -206,18 +229,18 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             continue
 
         rsa_match = re.match(
-            r"^crypto\s+key\s+generate\s+rsa(?:\s+general-keys)?(?:\s+modulus\s+(\d+))?",
-            line,
-            flags=re.IGNORECASE,
+            r"^crypto\s+key\s+generate\s+rsa\b", line, flags=re.IGNORECASE
         )
         if rsa_match:
-            modulus = rsa_match.group(1)
-            if modulus is not None:
-                data.rsa_modulus = int(modulus)
+            modulus_match = re.search(
+                r"\bmodulus\s+(\d+)\b", line, flags=re.IGNORECASE
+            )
+            if modulus_match is not None:
+                data.rsa_modulus = int(modulus_match.group(1))
             continue
 
         line_console_match = re.match(
-            r"^line\s+console\s+\d+$", line, flags=re.IGNORECASE
+            r"^line\s+con(?:sole)?\s+\d+$", line, flags=re.IGNORECASE
         )
         if line_console_match:
             current_interface = None
@@ -231,6 +254,9 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
 
         line_vty_match = re.match(r"^line\s+vty\b.*$", line, flags=re.IGNORECASE)
         if line_vty_match:
+            current_interface = None
+            current_ospf_process = None
+            in_bgp_section = False
             in_console_line = False
             in_vty_line = True
             in_aux_line = False
@@ -239,6 +265,9 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
 
         line_aux_match = re.match(r"^line\s+aux\b.*$", line, flags=re.IGNORECASE)
         if line_aux_match:
+            current_interface = None
+            current_ospf_process = None
+            in_bgp_section = False
             in_console_line = False
             in_vty_line = False
             in_aux_line = True
@@ -307,17 +336,10 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             in_console_line = False
             in_vty_line = False
             in_aux_line = False
+            in_control_plane = False
             acl_name, action, protocol, remainder = acl_match.groups()
             pieces = remainder.split()
-            if len(pieces) >= 4:
-                src = " ".join(pieces[:2])
-                dst = " ".join(pieces[2:4])
-            elif len(pieces) >= 2:
-                src = pieces[0]
-                dst = pieces[1]
-            else:
-                src = remainder
-                dst = ""
+            src, dst = _parse_acl_src_dst(pieces)
             data.acls.append(
                 AccessListEntry(
                     acl_name=acl_name,

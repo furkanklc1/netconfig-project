@@ -4,6 +4,7 @@ import re
 from app.ai_commentary import format_report
 from app.parser import parse_cisco_ios_config
 from app.rules import run_rules
+from app.secret_scanner import mask_credentials_in_line, scan_secrets
 
 
 _IOS_MARKER_PATTERNS: list[str] = [
@@ -263,7 +264,16 @@ def _detect_device_role(text: str) -> str:
 def audit_config_text(config_text: str) -> list[dict]:
     parsed = parse_cisco_ios_config(config_text)
     findings = run_rules(parsed)
+    findings.extend(scan_secrets(config_text))
     return format_report(findings)
+
+
+def count_categories(findings: list[dict]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in findings:
+        cat = item.get("category", "general")
+        counts[cat] = counts.get(cat, 0) + 1
+    return counts
 
 
 def _finding_key(item: dict) -> tuple[str, str, str]:
@@ -277,11 +287,23 @@ def _extract_changed_lines(old_text: str, new_text: str) -> list[dict]:
         if line.startswith("+ "):
             content = line[2:].strip()
             if content:
-                changed.append({"source": "new", "prefix": "+", "line": content})
+                changed.append(
+                    {
+                        "source": "new",
+                        "prefix": "+",
+                        "line": mask_credentials_in_line(content),
+                    }
+                )
         elif line.startswith("- "):
             content = line[2:].strip()
             if content:
-                changed.append({"source": "old", "prefix": "-", "line": content})
+                changed.append(
+                    {
+                        "source": "old",
+                        "prefix": "-",
+                        "line": mask_credentials_in_line(content),
+                    }
+                )
     unique_changed: list[dict] = []
     seen: set[tuple[str, str]] = set()
     for line in changed:
@@ -299,7 +321,7 @@ def _group_by_indent(raw_lines: list[str]) -> list[dict]:
         if not raw.strip():
             continue
         is_indented = raw.startswith((" ", "\t"))
-        text = raw.strip()
+        text = mask_credentials_in_line(raw.strip())
         if is_indented and current is not None:
             if text not in current["children"]:
                 current["children"].append(text)
@@ -336,8 +358,8 @@ def _build_diff_groups(old_text: str, new_text: str) -> dict:
                 if old_line and new_line:
                     modified_pairs.append(
                         {
-                            "old_line": old_line.strip(),
-                            "new_line": new_line.strip(),
+                            "old_line": mask_credentials_in_line(old_line.strip()),
+                            "new_line": mask_credentials_in_line(new_line.strip()),
                         }
                     )
                 elif old_line:
