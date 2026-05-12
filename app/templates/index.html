@@ -85,12 +85,12 @@
 
         --diff-bg: #f8fafc;
         --diff-border: #e2e8f0;
-        --diff-old-bg: #fef2f2;
-        --diff-old-border: #fecaca;
+        --diff-old-bg: #fee2e2;
+        --diff-old-border: #fca5a5;
         --diff-old-text: #7f1d1d;
-        --diff-new-bg: #ecfeff;
-        --diff-new-border: #a5f3fc;
-        --diff-new-text: #155e75;
+        --diff-new-bg: #cffafe;
+        --diff-new-border: #67e8f9;
+        --diff-new-text: #0e7490;
 
         --filter-btn-bg: rgba(255, 255, 255, 0.7);
         --filter-btn-border: #cbd5e1;
@@ -186,12 +186,12 @@
 
         --diff-bg: rgba(15, 23, 42, 0.55);
         --diff-border: rgba(148, 163, 184, 0.2);
-        --diff-old-bg: rgba(127, 29, 29, 0.3);
-        --diff-old-border: rgba(248, 113, 113, 0.4);
-        --diff-old-text: #fca5a5;
-        --diff-new-bg: rgba(8, 51, 68, 0.45);
-        --diff-new-border: rgba(34, 211, 238, 0.4);
-        --diff-new-text: #67e8f9;
+        --diff-old-bg: rgba(127, 29, 29, 0.4);
+        --diff-old-border: rgba(248, 113, 113, 0.55);
+        --diff-old-text: #fecaca;
+        --diff-new-bg: rgba(8, 51, 68, 0.55);
+        --diff-new-border: rgba(34, 211, 238, 0.55);
+        --diff-new-text: #a5f3fc;
 
         --filter-btn-bg: rgba(30, 41, 59, 0.5);
         --filter-btn-border: rgba(148, 163, 184, 0.25);
@@ -507,8 +507,12 @@
         border-radius: 0.5rem;
         padding: 0.42rem 0.6rem;
         color: var(--ink);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
         transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
       }
+      .diff-line strong { color: inherit; font-weight: 700; margin-right: 0.35rem; opacity: 0.85; }
       .diff-line.old { background: var(--diff-old-bg); border-color: var(--diff-old-border); color: var(--diff-old-text); }
       .diff-line.new { background: var(--diff-new-bg); border-color: var(--diff-new-border); color: var(--diff-new-text); }
       .diff-pair { border: 1px solid var(--diff-border); border-radius: 0.6rem; overflow: hidden; }
