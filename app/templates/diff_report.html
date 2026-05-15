@@ -138,6 +138,18 @@
         <td class="value">{{ diff_result.old_device_info.vendor }}</td>
       </tr>
       {% endif %}
+      {% if diff_result.old_device_info and diff_result.old_device_info.device_type_label %}
+      <tr>
+        <td class="label">Cihaz Türü</td>
+        <td class="value">{{ diff_result.old_device_info.device_type_label }} → {{ diff_result.new_device_info.device_type_label }}</td>
+      </tr>
+      {% endif %}
+      {% if diff_result.old_device_info and diff_result.old_device_info.device_role_label %}
+      <tr>
+        <td class="label">Cihaz Rolü</td>
+        <td class="value">{{ diff_result.old_device_info.device_role_label }} → {{ diff_result.new_device_info.device_role_label }}</td>
+      </tr>
+      {% endif %}
     </table>
 
     {% if diff_result.mismatch_warnings %}

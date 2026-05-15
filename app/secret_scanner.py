@@ -98,8 +98,9 @@ def _mask_ipv4(text: str) -> str:
 
 def mask_credentials_in_line(line: str, *, mask_ipv4: bool = False) -> str:
     masked = line
-    for pattern in _GENERIC_MASK_PATTERNS:
-        masked = pattern.sub(_mask_secret_in, masked)
+    # Kullanıcı talebi: Şifreler maskelenmeyecek (config'de nasılsa öyle görünecek).
+    # for pattern in _GENERIC_MASK_PATTERNS:
+    #     masked = pattern.sub(_mask_secret_in, masked)
     if mask_ipv4:
         masked = _mask_ipv4(masked)
     return masked

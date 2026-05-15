@@ -164,11 +164,11 @@ def index():
         else:
             payload["old_uploaded_name"] = old_file.filename
             payload["new_uploaded_name"] = new_file.filename
-            valid_ext = (".txt", ".cfg")
+            valid_ext = (".txt", ".cfg", ".conf")
             if not payload["old_uploaded_name"].lower().endswith(valid_ext) or not payload[
                 "new_uploaded_name"
             ].lower().endswith(valid_ext):
-                payload["error"] = "Sadece .txt veya .cfg uzantılı dosyalar kabul edilir."
+                payload["error"] = "Sadece .txt, .cfg veya .conf uzantılı dosyalar kabul edilir."
             else:
                 old_text = _decode_file(old_file)
                 new_text = _decode_file(new_file)
@@ -203,11 +203,11 @@ def index():
         payload["analysis_mode"] = "single"
         uploaded_file = request.files.get("config_file")
         if uploaded_file is None or not uploaded_file.filename:
-            payload["error"] = "Lütfen bir .txt veya .cfg dosyası seçin."
+            payload["error"] = "Lütfen bir .txt, .cfg veya .conf dosyası seçin."
         else:
             payload["uploaded_name"] = uploaded_file.filename
-            if not payload["uploaded_name"].lower().endswith((".txt", ".cfg")):
-                payload["error"] = "Sadece .txt veya .cfg uzantılı dosyalar kabul edilir."
+            if not payload["uploaded_name"].lower().endswith((".txt", ".cfg", ".conf")):
+                payload["error"] = "Sadece .txt, .cfg veya .conf uzantılı dosyalar kabul edilir."
             else:
                 raw_config = _decode_file(uploaded_file)
                 is_valid, error_message = validate_config_text(raw_config)

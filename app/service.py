@@ -8,8 +8,11 @@ from app.models import Finding
 from app.parser import parse_cisco_ios_config
 from app.device_type_policy import (
     DEVICE_TYPE_LABELS_TR,
+    DEVICE_ROLE_LABELS,
     filter_findings_by_device_type,
+    filter_findings_by_device_role,
     infer_device_type,
+    infer_device_role,
 )
 from app.rules import RULE_CATEGORIES, run_rules
 from app.secret_scanner import mask_credentials_in_line, scan_secrets
@@ -561,16 +564,22 @@ def audit_bundle(config_text: str) -> tuple[list[dict], dict]:
     """Parse + cihaz türü tahmini + kurallar + secret + toplulaştırma; rapor ve device_info."""
     parsed = parse_cisco_ios_config(config_text)
     dt_key = infer_device_type(config_text)
+    dr_key = infer_device_role(config_text, dt_key)
+    
     findings = run_rules(parsed)
     findings = filter_findings_by_device_type(findings, dt_key)
+    findings = filter_findings_by_device_role(findings, dr_key)
+    
     findings.extend(scan_secrets(config_text))
     findings = aggregate_findings(findings)
     report = format_report(findings)
     info = detect_device_info(config_text)
     info["device_type"] = dt_key
     info["device_type_label"] = DEVICE_TYPE_LABELS_TR.get(dt_key, dt_key)
+    info["device_role"] = dr_key
+    info["device_role_label"] = DEVICE_ROLE_LABELS.get(dr_key, dr_key)
     info["device_type_source"] = "inferred"
-    info["device_type_note"] = "Cihaz türü konfigürasyondan otomatik tahmin edildi"
+    info["device_type_note"] = "Cihaz türü ve rolü otomatik tahmin edildi"
     return report, info
 
 

@@ -132,6 +132,12 @@
         <td class="value">{{ device_info.device_type_label }}{% if device_info.device_type_note %} — {{ device_info.device_type_note }}{% endif %}</td>
       </tr>
       {% endif %}
+      {% if device_info.device_role_label %}
+      <tr>
+        <td class="label">Cihaz Rolü</td>
+        <td class="value">{{ device_info.device_role_label }}</td>
+      </tr>
+      {% endif %}
       {% endif %}
     </table>
 

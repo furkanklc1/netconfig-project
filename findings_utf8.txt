@@ -1,0 +1,177 @@
+
+==================================================
+Analyzing 01-Router.txt...
+==================================================
+[R008] medium: Console line için exec-timeout tanımı bulunamadı.... | CTX: line console 0
+[R010] high: `enable secret` tanımı bulunamadı.... | CTX: global configuration
+[R011] medium: `service password-encryption` etkin değil.... | CTX: global configuration
+[R013] high: `ip http server` etkin. Yönetim için HTTP açık olm... | CTX: ip http server
+[R015] medium: Uzak syslog sunucusu (`logging host`) tanımlı deği... | CTX: global configuration
+[R016] medium: `ntp server` tanımlı değil. Cihaz saati senkron de... | CTX: global configuration
+[R017] medium: `banner motd` tanımlı değil. Yasal/uyarı bildirimi... | CTX: global configuration
+[R018] high: `login block-for` tanımlı değil. Brute-force korum... | CTX: global configuration
+[R019] info: `no ip domain-lookup` ayarlanmamış (operasyonel iy... | CTX: global configuration
+[R021] medium: `no ip source-route` ayarlanmamış. IP source routi... | CTX: global configuration
+[R024] low: `clock timezone` tanımlı değil (operasyonel/deneti... | CTX: global configuration
+[R025] medium: `spanning-tree portfast bpduguard default` tanımlı... | CTX: global configuration
+[R027] medium: VTY hatlarında `access-class` tanımlı değil. Yönet... | CTX: line vty
+[R028] high: `enable password` (zayıf) tanımı tespit edildi. Ye... | CTX: global configuration
+[R029] high: `ip dhcp snooping` aktif değil. Sahte DHCP sunucul... | CTX: global configuration
+[R030] medium: `ip arp inspection` tanımlı değil. ARP spoofing sa... | CTX: global configuration
+[R031] medium: VTY için `exec-timeout` tanımı bulunamadı.... | CTX: line vty
+[R032] medium: `line aux` tanımlı ama `no exec` ile devre dışı bı... | CTX: line aux 0
+[R033] medium: `spanning-tree mode` tanımlı değil. Önerilen: `rap... | CTX: global configuration
+[R038] info: `service tcp-keepalives-in/out` etkin değil (opera... | CTX: global configuration
+[R039] low: `logging buffered` tanımlı değil. Yerel log buffer... | CTX: global configuration
+[R040] low: `ip ssh time-out` tanımlı değil (önerilen 60).... | CTX: global configuration
+[R041] low: `ip ssh authentication-retries` tanımlı değil (öne... | CTX: global configuration
+[R042] info: `archive` (config archive) tanımlı değil (operasyo... | CTX: global configuration
+[R072] high: RADIUS sunucusu tanımlı ancak `ip radius source-in... | CTX: radius-server
+[R073] high: Yerel kullanıcı `password` ile tanımlı. Kurumsal o... | CTX: username jsomeone password 0 cg6#107X
+[R001] medium: Tanımlı ancak hiçbir interface'te kullanılmayan VL... | CTX: vlan 1, vlan 2, vlan 3
+[R063] critical: Type 0 (cleartext) password tespit edildi.... | CTX: username jsomeone password 0 cg6#107X
+[R065] critical: RADIUS key cleartext olarak tanımlanmış.... | CTX: radius-server host 10.0.1.x auth-port 1812 acct-port 1813 ke
+[R004] low: 14 arayüzde aynı eksiklik: description eksik.... | CTX: interface BVI1, interface BVI2, interface BVI3, interface Do
+[R026] medium: FastEthernet3 trunk arayüzünde native VLAN varsayı... | CTX: interface FastEthernet3
+[R034] medium: FastEthernet3 trunk arayüzünde `switchport nonegot... | CTX: interface FastEthernet3
+[R043] low: Loopback arayüzü tanımlı değil. Yönetim/routing ka... | CTX: interface Loopback0
+
+==================================================
+Analyzing AP1141N-E-K9.conf...
+==================================================
+[R008] medium: Console line için exec-timeout tanımı bulunamadı.... | CTX: line console 0
+[R010] high: `enable secret` tanımı bulunamadı.... | CTX: global configuration
+[R013] high: `ip http server` etkin. Yönetim için HTTP açık olm... | CTX: ip http server
+[R016] medium: `ntp server` tanımlı değil. Cihaz saati senkron de... | CTX: global configuration
+[R017] medium: `banner motd` tanımlı değil. Yasal/uyarı bildirimi... | CTX: global configuration
+[R018] high: `login block-for` tanımlı değil. Brute-force korum... | CTX: global configuration
+[R019] info: `no ip domain-lookup` ayarlanmamış (operasyonel iy... | CTX: global configuration
+[R023] info: `no cdp run` tanımlı değil (düşük öncelik: CDP ile... | CTX: global configuration
+[R025] medium: `spanning-tree portfast bpduguard default` tanımlı... | CTX: global configuration
+[R027] medium: VTY hatlarında `access-class` tanımlı değil. Yönet... | CTX: line vty
+[R029] high: `ip dhcp snooping` aktif değil. Sahte DHCP sunucul... | CTX: global configuration
+[R030] medium: `ip arp inspection` tanımlı değil. ARP spoofing sa... | CTX: global configuration
+[R031] medium: VTY için `exec-timeout` tanımı bulunamadı.... | CTX: line vty
+[R032] low: `line aux 0` üzerinde `no exec` ile pasifleştirme ... | CTX: line aux 0
+[R033] medium: `spanning-tree mode` tanımlı değil. Önerilen: `rap... | CTX: global configuration
+[R038] info: `service tcp-keepalives-in/out` etkin değil (opera... | CTX: global configuration
+[R039] low: `logging buffered` tanımlı değil. Yerel log buffer... | CTX: global configuration
+[R040] low: `ip ssh time-out` tanımlı değil (önerilen 60).... | CTX: global configuration
+[R041] low: `ip ssh authentication-retries` tanımlı değil (öne... | CTX: global configuration
+[R046] high: SNMP v1/v2c community kullanılıyor ama SNMPv3 user... | CTX: snmp-server
+[R070] medium: Uzak syslog kullanılıyor ancak `logging source-int... | CTX: logging host
+[R075] medium: `no ip cef` etkin. CEF kapalı iken forwarding perf... | CTX: no ip cef
+[R078] medium: PKI trustpoint tanımlı ancak `ip domain-name` yok.... | CTX: crypto pki trustpoint
+[R001] medium: Tanımlı ancak hiçbir interface'te kullanılmayan VL... | CTX: vlan 10, vlan 11, vlan 99
+[R004] low: 10 arayüzde aynı eksiklik: description eksik.... | CTX: interface BVI1, interface Dot11Radio0, interface Dot11Radio0
+[R043] low: Loopback arayüzü tanımlı değil. Yönetim/routing ka... | CTX: interface Loopback0
+
+==================================================
+Analyzing c2811-CUCME.conf...
+==================================================
+[R008] medium: Console line için exec-timeout tanımı bulunamadı.... | CTX: line console 0
+[R012] high: VTY hatlarında `transport input telnet` tespit edi... | CTX: line vty
+[R013] high: `ip http server` etkin. Yönetim için HTTP açık olm... | CTX: ip http server
+[R017] medium: `banner motd` tanımlı değil. Yasal/uyarı bildirimi... | CTX: global configuration
+[R019] info: `no ip domain-lookup` ayarlanmamış (operasyonel iy... | CTX: global configuration
+[R023] info: `no cdp run` tanımlı değil (düşük öncelik: CDP ile... | CTX: global configuration
+[R031] medium: VTY için `exec-timeout` tanımı bulunamadı.... | CTX: line vty
+[R032] medium: `line aux` tanımlı ama `no exec` ile devre dışı bı... | CTX: line aux 0
+[R033] medium: `spanning-tree mode` tanımlı değil. Önerilen: `rap... | CTX: global configuration
+[R040] low: `ip ssh time-out` tanımlı değil (önerilen 60).... | CTX: global configuration
+[R041] low: `ip ssh authentication-retries` tanımlı değil (öne... | CTX: global configuration
+[R048] high: Control Plane Policing (CoPP) tanımlı değil. CPU'y... | CTX: control-plane
+[R069] medium: NTP sunucusu tanımlı ancak NTP kimlik doğrulaması ... | CTX: ntp server
+[R073] high: Yerel kullanıcı `password` ile tanımlı. Kurumsal o... | CTX: username b password 7 REDACTED
+[R078] medium: PKI trustpoint tanımlı ancak `ip domain-name` yok.... | CTX: crypto pki trustpoint
+[R062] critical: Cisco Type 7 password tespit edildi (saniyeler içi... | CTX: username b password 7 REDACTED
+ip ftp password 7 REDACTED
+[R004] low: 3 arayüzde aynı eksiklik: description eksik.... | CTX: interface FastEthernet0/1, interface Loopback0, interface Nu
+[R052] medium: FastEthernet0/0 L3 interface'inde uRPF (`ip verify... | CTX: interface FastEthernet0/0
+
+==================================================
+Analyzing c2911-router.conf...
+==================================================
+[R008] medium: Console line için exec-timeout tanımı bulunamadı.... | CTX: line console 0
+[R012] high: VTY hatlarında `transport input telnet` tespit edi... | CTX: line vty
+[R013] high: `ip http server` etkin. Yönetim için HTTP açık olm... | CTX: ip http server
+[R017] medium: `banner motd` tanımlı değil. Yasal/uyarı bildirimi... | CTX: global configuration
+[R019] info: `no ip domain-lookup` ayarlanmamış (operasyonel iy... | CTX: global configuration
+[R023] info: `no cdp run` tanımlı değil (düşük öncelik: CDP ile... | CTX: global configuration
+[R031] medium: VTY için `exec-timeout` tanımı bulunamadı.... | CTX: line vty
+[R033] medium: `spanning-tree mode` tanımlı değil. Önerilen: `rap... | CTX: global configuration
+[R040] low: `ip ssh time-out` tanımlı değil (önerilen 60).... | CTX: global configuration
+[R041] low: `ip ssh authentication-retries` tanımlı değil (öne... | CTX: global configuration
+[R046] high: SNMP v1/v2c community kullanılıyor ama SNMPv3 user... | CTX: snmp-server
+[R048] high: Control Plane Policing (CoPP) tanımlı değil. CPU'y... | CTX: control-plane
+[R069] medium: NTP sunucusu tanımlı ancak NTP kimlik doğrulaması ... | CTX: ntp server
+[R078] medium: PKI trustpoint tanımlı ancak `ip domain-name` yok.... | CTX: crypto pki trustpoint
+[R062] critical: Cisco Type 7 password tespit edildi (saniyeler içi... | CTX: ppp chap password 7 REDACTED
+[R004] low: 7 arayüzde aynı eksiklik: description eksik.... | CTX: interface Dialer2, interface Embedded-Service-Engine0/0, int
+[R052] medium: 2 arayüzde aynı eksiklik: uRPF (`ip verify unicast... | CTX: interface GigabitEthernet0/0, interface GigabitEthernet0/1
+
+==================================================
+Analyzing c3560g-L3Switch.conf...
+==================================================
+[R008] medium: Console line için exec-timeout tanımı bulunamadı.... | CTX: line console 0
+[R011] medium: `service password-encryption` etkin değil.... | CTX: global configuration
+[R013] high: `ip http server` etkin. Yönetim için HTTP açık olm... | CTX: ip http server
+[R017] medium: `banner motd` tanımlı değil. Yasal/uyarı bildirimi... | CTX: global configuration
+[R019] info: `no ip domain-lookup` ayarlanmamış (operasyonel iy... | CTX: global configuration
+[R021] medium: `no ip source-route` ayarlanmamış. IP source routi... | CTX: global configuration
+[R023] info: `no cdp run` tanımlı değil (düşük öncelik: CDP ile... | CTX: global configuration
+[R027] medium: VTY hatlarında `access-class` tanımlı değil. Yönet... | CTX: line vty
+[R031] medium: VTY için `exec-timeout` tanımı bulunamadı.... | CTX: line vty
+[R032] low: `line aux 0` üzerinde `no exec` ile pasifleştirme ... | CTX: line aux 0
+[R038] info: `service tcp-keepalives-in/out` etkin değil (opera... | CTX: global configuration
+[R039] low: `logging buffered` tanımlı değil. Yerel log buffer... | CTX: global configuration
+[R040] low: `ip ssh time-out` tanımlı değil (önerilen 60).... | CTX: global configuration
+[R046] high: SNMP v1/v2c community kullanılıyor ama SNMPv3 user... | CTX: snmp-server
+[R048] high: Control Plane Policing (CoPP) tanımlı değil. CPU'y... | CTX: control-plane
+[R069] medium: NTP sunucusu tanımlı ancak NTP kimlik doğrulaması ... | CTX: ntp server
+[R001] medium: Tanımlı ancak hiçbir interface'te kullanılmayan VL... | CTX: vlan 21, vlan 30, vlan 40, vlan 41, vlan 42, vlan 43, vlan 5
+[R004] low: 69 arayüzde aynı eksiklik: description eksik.... | CTX: interface GigabitEthernet0/1, interface GigabitEthernet0/10,
+[R026] medium: 4 arayüzde aynı eksiklik: native VLAN varsayılan (... | CTX: interface GigabitEthernet0/23, interface GigabitEthernet0/24
+[R034] medium: 11 arayüzde aynı eksiklik: `switchport nonegotiate... | CTX: interface GigabitEthernet0/13, interface GigabitEthernet0/14
+[R035] medium: 3 arayüzde aynı eksiklik: varsayılan VLAN 1'i kull... | CTX: interface GigabitEthernet0/41, interface GigabitEthernet0/42
+[R036] medium: 2 arayüzde aynı eksiklik: `switchport port-securit... | CTX: interface GigabitEthernet0/11, interface GigabitEthernet0/12
+[R044] info: 11 arayüzde aynı eksiklik: `no cdp enable` tanımlı... | CTX: interface GigabitEthernet0/11, interface GigabitEthernet0/12
+[R045] low: 4 arayüzde aynı eksiklik: `storm-control` tanımlı ... | CTX: interface GigabitEthernet0/11, interface GigabitEthernet0/12
+
+==================================================
+Analyzing sample_ios.cfg...
+==================================================
+[R002] high: ACL 'ACL-INTERNET' içinde fazla geniş bir izin kur... | CTX: access-list ACL-INTERNET permit ip any any
+[R008] medium: Console line için exec-timeout tanımı bulunamadı.... | CTX: line console 0
+[R010] high: `enable secret` tanımı bulunamadı.... | CTX: global configuration
+[R011] medium: `service password-encryption` etkin değil.... | CTX: global configuration
+[R014] high: `aaa new-model` aktif değil. Merkezi kimlik doğrul... | CTX: global configuration
+[R015] medium: Uzak syslog sunucusu (`logging host`) tanımlı deği... | CTX: global configuration
+[R016] medium: `ntp server` tanımlı değil. Cihaz saati senkron de... | CTX: global configuration
+[R017] medium: `banner motd` tanımlı değil. Yasal/uyarı bildirimi... | CTX: global configuration
+[R018] high: `login block-for` tanımlı değil. Brute-force korum... | CTX: global configuration
+[R019] info: `no ip domain-lookup` ayarlanmamış (operasyonel iy... | CTX: global configuration
+[R021] medium: `no ip source-route` ayarlanmamış. IP source routi... | CTX: global configuration
+[R022] medium: `no service pad` ayarlanmamış. PAD servisi varsayı... | CTX: global configuration
+[R023] info: `no cdp run` tanımlı değil (düşük öncelik: CDP ile... | CTX: global configuration
+[R024] low: `clock timezone` tanımlı değil (operasyonel/deneti... | CTX: global configuration
+[R025] medium: `spanning-tree portfast bpduguard default` tanımlı... | CTX: global configuration
+[R027] medium: VTY hatlarında `access-class` tanımlı değil. Yönet... | CTX: line vty
+[R029] high: `ip dhcp snooping` aktif değil. Sahte DHCP sunucul... | CTX: global configuration
+[R030] medium: `ip arp inspection` tanımlı değil. ARP spoofing sa... | CTX: global configuration
+[R031] medium: VTY için `exec-timeout` tanımı bulunamadı.... | CTX: line vty
+[R032] low: `line aux 0` üzerinde `no exec` ile pasifleştirme ... | CTX: line aux 0
+[R033] medium: `spanning-tree mode` tanımlı değil. Önerilen: `rap... | CTX: global configuration
+[R038] info: `service tcp-keepalives-in/out` etkin değil (opera... | CTX: global configuration
+[R039] low: `logging buffered` tanımlı değil. Yerel log buffer... | CTX: global configuration
+[R040] low: `ip ssh time-out` tanımlı değil (önerilen 60).... | CTX: global configuration
+[R041] low: `ip ssh authentication-retries` tanımlı değil (öne... | CTX: global configuration
+[R042] info: `archive` (config archive) tanımlı değil (operasyo... | CTX: global configuration
+[R003] medium: GigabitEthernet0/1 shutdown durumda ama trunk olar... | CTX: interface GigabitEthernet0/1
+[R026] medium: GigabitEthernet0/1 trunk arayüzünde native VLAN va... | CTX: interface GigabitEthernet0/1
+[R034] medium: GigabitEthernet0/1 trunk arayüzünde `switchport no... | CTX: interface GigabitEthernet0/1
+[R036] medium: GigabitEthernet0/2 access portunda `switchport por... | CTX: interface GigabitEthernet0/2
+[R037] medium: GigabitEthernet0/2 access portunda `spanning-tree ... | CTX: interface GigabitEthernet0/2
+[R043] low: Loopback arayüzü tanımlı değil. Yönetim/routing ka... | CTX: interface Loopback0
+[R044] info: GigabitEthernet0/2 access portunda `no cdp enable`... | CTX: interface GigabitEthernet0/2
+[R045] low: GigabitEthernet0/2 access portunda `storm-control`... | CTX: interface GigabitEthernet0/2
