@@ -704,12 +704,29 @@ def audit_config_diff(old_text: str, new_text: str) -> dict:
     diff_groups = _build_diff_groups(old_text, new_text)
     changed_set = {line["line"].lower() for line in changed_lines}
 
+    # Diff'te context etkisi: tam eşleşme veya context değişen satırın sözcük-sınırı öneki.
+    # Eski substring kontrolü ("token in context") çok geniş eşleşme üretiyordu;
+    # örn. changed_set içindeki "ip" tokeni "ip http server" gibi her context'e eşleşiyordu.
+
+    def _context_affected(ctx: str) -> bool:
+        ctx_lower = ctx.lower().strip()
+        if not ctx_lower:
+            return False
+        # 1) Tam eşleşme: context doğrudan değişen satırlardan biri
+        if ctx_lower in changed_set:
+            return True
+        # 2) Sözcük-sınırı prefix: değişen satır "context + ' '" ile başlıyorsa
+        #    (örn. context="interface gi0/0", changed_line="interface gi0/0 description new")
+        #    "ip" gibi çok kısa context'ler de "ip ssh version 2" ile bu şekilde eşleşir;
+        #    bunu önlemek için context en az 8 karakter olmalı.
+        if len(ctx_lower) >= 8:
+            prefix = ctx_lower + " "
+            if any(changed_line.startswith(prefix) for changed_line in changed_set):
+                return True
+        return False
+
     changed_line_findings = [
-        item
-        for item in new_report
-        if item["context"].lower() in changed_set or any(
-            token in item["context"].lower() for token in changed_set
-        )
+        item for item in new_report if _context_affected(item["context"])
     ]
 
     old_hostname = _extract_hostname(old_text)

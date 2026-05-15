@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <title>NetConfig AI - Diff Raporu</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 1.5cm 1.4cm 2cm 1.4cm;
+        @frame footer_frame {
+          -pdf-frame-content: footer_content;
+          left: 1.4cm; width: 18cm; top: 27.2cm; height: 1cm;
+        }
+      }
+      body {
+        font-family: Helvetica, Arial, sans-serif;
+        color: #0f172a;
+        font-size: 10pt;
+        line-height: 1.4;
+      }
+      h1 { font-size: 22pt; margin: 0 0 4px 0; color: #1d4ed8; }
+      h2 { font-size: 14pt; margin: 18px 0 8px 0; color: #1e293b; border-bottom: 2px solid #4f46e5; padding-bottom: 4px; }
+      h3 { font-size: 11pt; margin: 12px 0 6px 0; color: #334155; }
+      p { margin: 4px 0; }
+      .subtitle { color: #64748b; font-size: 10pt; margin-bottom: 12px; }
+
+      table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+      table.meta td { padding: 4px 6px; vertical-align: top; font-size: 9.5pt; }
+      table.meta td.label { color: #64748b; width: 28%; }
+      table.meta td.value { color: #0f172a; font-weight: 600; }
+
+      table.summary { margin: 8px 0; }
+      table.summary td { padding: 8px; text-align: center; border: 1px solid #e2e8f0; }
+      table.summary td.c { background: #fdf2f8; color: #9f1239; }
+      table.summary td.h { background: #fef2f2; color: #991b1b; }
+      table.summary td.m { background: #fff7ed; color: #9a3412; }
+      table.summary td.l { background: #eff6ff; color: #1e3a8a; }
+      table.summary td.i { background: #f1f5f9; color: #475569; }
+      table.summary td.t { background: #f8fafc; color: #334155; }
+      table.summary .num { font-size: 22pt; font-weight: 700; display: block; }
+      table.summary .lbl { font-size: 9pt; }
+
+      table.findings { font-size: 9pt; margin-bottom: 8px; }
+      table.findings th { background: #f1f5f9; color: #334155; padding: 5px 6px; text-align: left; font-size: 8.5pt; }
+      table.findings td { padding: 6px 7px; vertical-align: top; border-bottom: 1px solid #e2e8f0; }
+      table.findings tr.critical td { background: #fdf2f8; }
+      table.findings tr.high td { background: #fef2f2; }
+      table.findings tr.medium td { background: #fff7ed; }
+      table.findings tr.low td { background: #eff6ff; }
+      table.findings tr.info td { background: #f8fafc; }
+
+      .badge {
+        display: inline-block; padding: 1px 6px;
+        border-radius: 8px; font-size: 7.5pt; font-weight: 700; text-transform: uppercase;
+      }
+      .badge-critical { background: #9f1239; color: #fff; }
+      .badge-high { background: #dc2626; color: #fff; }
+      .badge-medium { background: #d97706; color: #fff; }
+      .badge-low { background: #2563eb; color: #fff; }
+      .badge-info { background: #64748b; color: #fff; }
+      .badge-security { background: #fee2e2; color: #991b1b; }
+      .badge-routing { background: #ede9fe; color: #5b21b6; }
+      .badge-l2 { background: #ccfbf1; color: #115e59; }
+      .badge-compliance { background: #fef3c7; color: #92400e; }
+      .badge-operations { background: #e0f2fe; color: #075985; }
+
+      code, .ctx {
+        font-family: "Courier New", monospace;
+        font-size: 8.5pt;
+        background: #f1f5f9;
+        padding: 1px 4px;
+        color: #0f172a;
+      }
+      .rec { color: #0f766e; font-size: 9pt; margin-top: 2px; }
+      .footer { color: #94a3b8; font-size: 8pt; text-align: center; }
+
+      /* Diff-özel stiller */
+      .diff-line {
+        font-family: "Courier New", monospace;
+        font-size: 8.5pt;
+        padding: 3px 6px;
+        margin: 2px 0;
+        border-radius: 3px;
+      }
+      .diff-added { background: #d1fae5; color: #065f46; }
+      .diff-removed { background: #fee2e2; color: #7f1d1d; }
+      .diff-pair-old { background: #fee2e2; color: #7f1d1d; }
+      .diff-pair-new { background: #cffafe; color: #0e7490; }
+
+      .section-new { border-left: 4px solid #10b981; padding-left: 8px; margin-bottom: 12px; }
+      .section-resolved { border-left: 4px solid #6366f1; padding-left: 8px; margin-bottom: 12px; }
+
+      .warning-box {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 4px;
+        padding: 8px 10px;
+        margin: 6px 0;
+        font-size: 9pt;
+        color: #9a3412;
+      }
+
+      .empty {
+        text-align: center; color: #16a34a;
+        padding: 14px; background: #f0fdf4;
+        border: 1px solid #bbf7d0; font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>NetConfig AI</h1>
+    <p class="subtitle">Cisco IOS Konfigürasyon Diff Raporu</p>
+
+    <table class="meta">
+      <tr>
+        <td class="label">Rapor Tarihi</td>
+        <td class="value">{{ generated_at }}</td>
+      </tr>
+      <tr>
+        <td class="label">Eski Dosya</td>
+        <td class="value">{{ old_uploaded_name or "-" }}</td>
+      </tr>
+      <tr>
+        <td class="label">Yeni Dosya</td>
+        <td class="value">{{ new_uploaded_name or "-" }}</td>
+      </tr>
+      {% if diff_result.old_hostname or diff_result.new_hostname %}
+      <tr>
+        <td class="label">Hostname</td>
+        <td class="value">
+          {{ diff_result.old_hostname or "?" }} → {{ diff_result.new_hostname or "?" }}
+        </td>
+      </tr>
+      {% endif %}
+      {% if diff_result.old_device_info and diff_result.old_device_info.vendor and diff_result.old_device_info.vendor != "Unknown" %}
+      <tr>
+        <td class="label">Vendor</td>
+        <td class="value">{{ diff_result.old_device_info.vendor }}</td>
+      </tr>
+      {% endif %}
+    </table>
+
+    {% if diff_result.mismatch_warnings %}
+    <h3>⚠️ Uyarılar</h3>
+    {% for w in diff_result.mismatch_warnings %}
+    <div class="warning-box">{{ w }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <h2>Yeni Bulgular (yeni config'de ortaya çıkan)</h2>
+    {% if new_findings %}
+    <table class="summary">
+      <tr>
+        <td class="c" width="20%">
+          <span class="num">{{ new_severity_counts.critical }}</span>
+          <span class="lbl">CRITICAL</span>
+        </td>
+        <td class="h" width="20%">
+          <span class="num">{{ new_severity_counts.high }}</span>
+          <span class="lbl">HIGH</span>
+        </td>
+        <td class="m" width="20%">
+          <span class="num">{{ new_severity_counts.medium }}</span>
+          <span class="lbl">MEDIUM</span>
+        </td>
+        <td class="l" width="20%">
+          <span class="num">{{ new_severity_counts.low }}</span>
+          <span class="lbl">LOW</span>
+        </td>
+        <td class="i" width="20%">
+          <span class="num">{{ new_severity_counts.info }}</span>
+          <span class="lbl">INFO</span>
+        </td>
+      </tr>
+    </table>
+    <table class="findings" repeat="1">
+      <thead>
+        <tr>
+          <th width="10%">ID</th>
+          <th width="9%">Severity</th>
+          <th width="11%">Kategori</th>
+          <th>Bulgu / Öneri</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in new_findings %}
+        <tr class="{{ item.severity }}">
+          <td><strong>{{ item.rule_id }}</strong></td>
+          <td><span class="badge badge-{{ item.severity }}">{{ item.severity|upper }}</span></td>
+          <td><span class="badge badge-{{ item.category }}">{{ item.category }}</span></td>
+          <td>
+            <strong>{{ item.message }}</strong>
+            {% if item.occurrence_count is defined and item.occurrence_count > 1 %}
+            <span class="badge" style="margin-left:6px;">{{ item.occurrence_count }} konum</span>
+            {% endif %}
+            <br>
+            <span class="ctx" style="white-space: pre-wrap;">{{ item.context }}</span>
+            {% if item.recommendation %}
+            <div class="rec"><strong>Öneri:</strong> {{ item.recommendation }}</div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Yeni config'de ortaya çıkan ek bulgu yok.</div>
+    {% endif %}
+
+    <h2>Çözülen Bulgular (eski config'de vardı, yenide yok)</h2>
+    {% if resolved_findings %}
+    <table class="findings" repeat="1">
+      <thead>
+        <tr>
+          <th width="10%">ID</th>
+          <th width="9%">Severity</th>
+          <th width="11%">Kategori</th>
+          <th>Bulgu</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in resolved_findings %}
+        <tr class="{{ item.severity }}">
+          <td><strong>{{ item.rule_id }}</strong></td>
+          <td><span class="badge badge-{{ item.severity }}">{{ item.severity|upper }}</span></td>
+          <td><span class="badge badge-{{ item.category }}">{{ item.category }}</span></td>
+          <td>
+            <strong>{{ item.message }}</strong>
+            <br>
+            <span class="ctx" style="white-space: pre-wrap;">{{ item.context }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Çözülen bulgu yok.</div>
+    {% endif %}
+
+    {% if diff_result.modified_pairs or diff_result.added_groups or diff_result.removed_groups %}
+    <h2>Konfigürasyon Değişiklikleri</h2>
+
+    {% if diff_result.added_groups %}
+    <h3>➕ Eklenen Satırlar</h3>
+    {% for group in diff_result.added_groups[:30] %}
+    <div class="diff-line diff-added">+ {{ group.parent }}</div>
+    {% for child in group.children %}
+    <div class="diff-line diff-added" style="margin-left:16px;">  {{ child }}</div>
+    {% endfor %}
+    {% endfor %}
+    {% endif %}
+
+    {% if diff_result.removed_groups %}
+    <h3>➖ Kaldırılan Satırlar</h3>
+    {% for group in diff_result.removed_groups[:30] %}
+    <div class="diff-line diff-removed">- {{ group.parent }}</div>
+    {% for child in group.children %}
+    <div class="diff-line diff-removed" style="margin-left:16px;">  {{ child }}</div>
+    {% endfor %}
+    {% endfor %}
+    {% endif %}
+
+    {% if diff_result.modified_pairs %}
+    <h3>✏️ Değiştirilen Satırlar</h3>
+    {% for pair in diff_result.modified_pairs[:30] %}
+    <div class="diff-line diff-pair-old">− {{ pair.old_line }}</div>
+    <div class="diff-line diff-pair-new">+ {{ pair.new_line }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endif %}
+
+    <div id="footer_content" class="footer">
+      NetConfig AI — Cisco IOS Configuration Auditor &nbsp;|&nbsp; Diff Raporu &nbsp;|&nbsp; Sayfa <pdf:pagenumber> / <pdf:pagecount>
+    </div>
+  </body>
+</html>

@@ -557,6 +557,24 @@
         font-weight: 700;
         display: inline-flex; align-items: center; gap: 0.4rem;
         transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        /* Tıklanabilir */
+        cursor: pointer;
+        border: none;
+        font-family: inherit;
+        outline: none;
+      }
+      .severity-count-pill:hover {
+        filter: brightness(0.92);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+      }
+      .severity-count-pill:focus-visible {
+        outline: 2px solid var(--indigo-2);
+        outline-offset: 2px;
+      }
+      .severity-count-pill.sev-active {
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.35), 0 6px 16px rgba(15, 23, 42, 0.15);
+        transform: translateY(-1px);
       }
       .severity-count-pill.critical { background: var(--count-critical-bg); color: var(--count-critical-text); border: 1px solid var(--count-critical-border); }
       .severity-count-pill.high { background: var(--count-high-bg); color: var(--count-high-text); border: 1px solid var(--count-high-border); }
@@ -1210,6 +1228,8 @@
                   >Henüz dosya seçilmedi</span>
                 </label>
               </div>
+            </div>
+            <div class="d-flex justify-content-center mt-3">
               <button class="btn btn--analyze" type="submit">
                 <span class="btn-icon" aria-hidden="true">🔍</span>
                 <span class="btn-label">Analiz Et</span>
@@ -1395,19 +1415,19 @@
             </div>
             <div class="d-flex flex-wrap gap-2 align-items-center">
               {% if severity_counts and severity_counts.critical %}
-              <span class="severity-count-pill critical">{{ severity_counts.critical }} critical</span>
+              <button type="button" class="severity-count-pill critical" data-severity="critical" aria-label="Sadece critical bulgular">{{ severity_counts.critical }} critical</button>
               {% endif %}
               {% if severity_counts and severity_counts.high %}
-              <span class="severity-count-pill high">{{ severity_counts.high }} high</span>
+              <button type="button" class="severity-count-pill high" data-severity="high" aria-label="Sadece high bulgular">{{ severity_counts.high }} high</button>
               {% endif %}
               {% if severity_counts and severity_counts.medium %}
-              <span class="severity-count-pill medium">{{ severity_counts.medium }} medium</span>
+              <button type="button" class="severity-count-pill medium" data-severity="medium" aria-label="Sadece medium bulgular">{{ severity_counts.medium }} medium</button>
               {% endif %}
               {% if severity_counts and severity_counts.low %}
-              <span class="severity-count-pill low">{{ severity_counts.low }} low</span>
+              <button type="button" class="severity-count-pill low" data-severity="low" aria-label="Sadece low bulgular">{{ severity_counts.low }} low</button>
               {% endif %}
               {% if severity_counts and severity_counts.info %}
-              <span class="severity-count-pill info">{{ severity_counts.info }} info</span>
+              <button type="button" class="severity-count-pill info" data-severity="info" aria-label="Sadece info bulgular">{{ severity_counts.info }} info</button>
               {% endif %}
               <span class="badge text-bg-light border rounded-pill px-3 py-2">{{ report|length }} bulgu</span>
             </div>
@@ -1415,7 +1435,7 @@
 
           {% if download_token %}
           <div class="download-bar mt-3">
-            <a class="btn btn--html" href="{{ url_for('download_html', token=download_token) }}" target="_blank" rel="noopener">
+            <a class="btn btn--pdf" href="{{ url_for('download_html', token=download_token) }}" target="_blank" rel="noopener">
               <span class="btn-icon" aria-hidden="true">📄</span>
               <span class="btn-label">HTML Rapor</span>
             </a>
@@ -1491,13 +1511,25 @@
       {% if diff_result %}
       <section class="card soft-card findings-wrap mt-4">
         <div class="card-header bg-transparent border-0 pt-4 px-4 findings-head">
-          <div class="d-flex justify-content-between align-items-center">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div class="section-head mb-0">
               <span class="section-icon">🔄</span>
               <h2>Diff Analizi Sonucu</h2>
             </div>
             <span class="badge text-bg-light border rounded-pill px-3 py-2">{{ diff_result.changed_line_count }} değişen satır</span>
           </div>
+          {% if download_token %}
+          <div class="download-bar mt-3">
+            <a class="btn btn--pdf" href="{{ url_for('download_diff_html', token=download_token) }}" target="_blank" rel="noopener">
+              <span class="btn-icon" aria-hidden="true">📄</span>
+              <span class="btn-label">Diff HTML Rapor</span>
+            </a>
+            <a class="btn btn--pdf" href="{{ url_for('download_diff_pdf', token=download_token) }}" target="_blank" rel="noopener">
+              <span class="btn-icon" aria-hidden="true">📑</span>
+              <span class="btn-label">Diff PDF Rapor</span>
+            </a>
+          </div>
+          {% endif %}
         </div>
         <div class="card-body px-4 py-3 diff-results-panel">
           <h4 class="h6">Değiştirilen Satırlar (Eski → Yeni)</h4>
@@ -1675,25 +1707,54 @@
       })();
 
       // Category filter
-      document.addEventListener('click', function (event) {
-        var button = event.target.closest('.category-filter button');
-        if (!button) return;
-        var filter = button.dataset.category;
-        var container = button.closest('.category-filter');
-        if (!container) return;
-        container.querySelectorAll('button').forEach(function (btn) {
-          btn.classList.toggle('active', btn === button);
+      (function () {
+        var activeSeverity = null; // null = hepsi
+
+        function applyFilters() {
+          var list = document.getElementById('findings-list');
+          if (!list) return;
+          // Hangi kategori aktif?
+          var activeCatBtn = document.querySelector('.category-filter button.active');
+          var activeCat = activeCatBtn ? activeCatBtn.dataset.category : 'all';
+
+          list.querySelectorAll('li.finding-item').forEach(function (li) {
+            var catOk = activeCat === 'all' || li.dataset.category === activeCat;
+            var sevOk = !activeSeverity || li.classList.contains(activeSeverity);
+            li.style.display = catOk && sevOk ? '' : 'none';
+          });
+        }
+
+        // Kategori chip tıklama
+        document.addEventListener('click', function (event) {
+          var button = event.target.closest('.category-filter button');
+          if (!button) return;
+          var container = button.closest('.category-filter');
+          if (!container) return;
+          container.querySelectorAll('button').forEach(function (btn) {
+            btn.classList.toggle('active', btn === button);
+          });
+          applyFilters();
         });
-        var list = document.getElementById('findings-list');
-        if (!list) return;
-        list.querySelectorAll('li.finding-item').forEach(function (li) {
-          if (filter === 'all' || li.dataset.category === filter) {
-            li.style.display = '';
+
+        // Severity pill tıklama
+        document.addEventListener('click', function (event) {
+          var pill = event.target.closest('button.severity-count-pill[data-severity]');
+          if (!pill) return;
+          var sev = pill.dataset.severity;
+          if (activeSeverity === sev) {
+            // Tekrar tıklandı → filtreyi kaldır
+            activeSeverity = null;
+            pill.classList.remove('sev-active');
           } else {
-            li.style.display = 'none';
+            // Yeni severity seç
+            activeSeverity = sev;
+            document.querySelectorAll('button.severity-count-pill').forEach(function (p) {
+              p.classList.toggle('sev-active', p === pill);
+            });
           }
+          applyFilters();
         });
-      });
+      })();
 
       // Particle network background
       (function () {

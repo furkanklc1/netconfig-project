@@ -23,7 +23,10 @@ def main() -> None:
     args = parser.parse_args()
 
     config_path = Path(args.config_path)
-    config_text = config_path.read_text(encoding="utf-8")
+    try:
+        config_text = config_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        config_text = config_path.read_text(encoding="latin-1")
     report, device_info = audit_bundle(config_text)
 
     if args.json:

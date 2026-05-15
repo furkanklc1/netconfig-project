@@ -107,7 +107,16 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             data.enable_secret_set = True
             continue
 
-        if re.match(r"^enable\s+password\s+.+$", line, flags=re.IGNORECASE):
+        # Type 0 (cleartext) veya hash türü belirtilmemiş `enable password` cleartext sayılır.
+        # `enable password 7 <hash>` (Type 7) veya `enable password 5/8/9 <hash>` düşük risk;
+        # cleartext olarak işaretlenmez.
+        if re.match(
+            r"^enable\s+password\s+(?:0\s+)?\S+$", line, flags=re.IGNORECASE
+        ) and not re.match(
+            r"^enable\s+password\s+[5-9]\s+\S+$", line, flags=re.IGNORECASE
+        ) and not re.match(
+            r"^enable\s+password\s+7\s+\S+$", line, flags=re.IGNORECASE
+        ):
             data.enable_password_cleartext = True
             continue
 

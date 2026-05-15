@@ -1,4 +1,5 @@
 import io
+import os
 import secrets
 import sys
 import uuid
@@ -6,7 +7,7 @@ from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
 
-# Çalışma dizini IDE/terminalden farklı olsa bile `app.*` importları çalışsın.
+
 _ROOT = Path(__file__).resolve().parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
@@ -21,7 +22,8 @@ from app.service import (
 )
 
 app = Flask(__name__, template_folder="app/templates")
-app.config["SECRET_KEY"] = secrets.token_hex(16)
+app.config["SECRET_KEY"] = os.environ.get("NETCONFIG_SECRET_KEY") or secrets.token_hex(16)
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB yükleme limiti
 
 _VIEW_CACHE: "OrderedDict[str, dict]" = OrderedDict()
 _DOWNLOAD_CACHE: "OrderedDict[str, dict]" = OrderedDict()
@@ -63,10 +65,11 @@ def _store_result(payload: dict) -> tuple[str, str]:
     return view_token, download_token
 
 
-def _pop_view(token: str | None) -> dict | None:
+def _peek_view(token: str | None) -> dict | None:
+    """View cache'den token'ı okur ama silmez; F5/yenileme sonrası veri korunur."""
     if not token:
         return None
-    return _VIEW_CACHE.pop(token, None)
+    return _VIEW_CACHE.get(token)
 
 
 def _peek_download(token: str | None) -> dict | None:
@@ -88,12 +91,32 @@ def _render_report_html(payload: dict) -> str:
     )
 
 
+def _render_diff_report_html(payload: dict) -> str:
+    """Diff analizi sonucunu rapor HTML'i olarak render eder."""
+    diff = payload.get("diff_result") or {}
+    new_findings = diff.get("new_findings", [])
+    resolved_findings = diff.get("resolved_findings", [])
+    old_name = payload.get("old_uploaded_name", "")
+    new_name = payload.get("new_uploaded_name", "")
+    return render_template(
+        "diff_report.html",
+        diff_result=diff,
+        new_findings=new_findings,
+        resolved_findings=resolved_findings,
+        new_severity_counts=_count_severities(new_findings),
+        resolved_severity_counts=_count_severities(resolved_findings),
+        old_uploaded_name=old_name,
+        new_uploaded_name=new_name,
+        generated_at=datetime.now().strftime("%d.%m.%Y %H:%M"),
+    )
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "GET":
         token = request.args.get("r")
         download_token = request.args.get("dl", "")
-        payload = _pop_view(token)
+        payload = _peek_view(token)
         if payload is None:
             payload = {}
         report = payload.get("report", [])
@@ -243,6 +266,50 @@ def download_pdf(token: str):
     )
 
 
+
+@app.route("/download/diff/html/<token>")
+def download_diff_html(token: str):
+    payload = _peek_download(token)
+    if payload is None or not payload.get("diff_result"):
+        abort(404)
+    html = _render_diff_report_html(payload)
+    old_name = payload.get("old_uploaded_name") or "diff"
+    filename = _safe_filename(old_name, ".html")
+    return Response(
+        html,
+        mimetype="text/html; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.route("/download/diff/pdf/<token>")
+def download_diff_pdf(token: str):
+    payload = _peek_download(token)
+    if payload is None or not payload.get("diff_result"):
+        abort(404)
+    try:
+        from xhtml2pdf import pisa
+    except ImportError:
+        return Response(
+            "PDF üretimi için 'xhtml2pdf' paketi yüklü değil.\n"
+            "Kurmak için: pip install xhtml2pdf",
+            status=503,
+            mimetype="text/plain; charset=utf-8",
+        )
+    html = _render_diff_report_html(payload)
+    buffer = io.BytesIO()
+    result = pisa.CreatePDF(src=html, dest=buffer, encoding="utf-8")
+    if result.err:
+        return Response("PDF oluşturulurken hata.", status=500, mimetype="text/plain")
+    old_name = payload.get("old_uploaded_name") or "diff"
+    filename = _safe_filename(old_name, ".pdf")
+    return Response(
+        buffer.getvalue(),
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 def _safe_filename(uploaded_name: str | None, extension: str) -> str:
     base = (uploaded_name or "audit").rsplit(".", 1)[0]
     base = "".join(c for c in base if c.isalnum() or c in ("-", "_")) or "audit"
@@ -250,4 +317,5 @@ def _safe_filename(uploaded_name: str | None, extension: str) -> str:
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(debug=debug)
