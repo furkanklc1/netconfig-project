@@ -4,13 +4,13 @@
 
 **Cisco IOS konfigürasyonları için akıllı network audit & güvenlik tarayıcısı**
 
-`.txt` / `.cfg` dosyalarını saniyeler içinde analiz eder; **68 kural** çalıştırır, **secret scanner** ile açıkta kalan parolaları yakalar ve her bulgu için aksiyon odaklı öneri üretir.
+`.txt` / `.cfg` dosyalarını saniyeler içinde analiz eder; **79 kural** çalıştırır, **secret scanner** ile açıkta kalan parolaları yakalar ve her bulgu için aksiyon odaklı öneri üretir.
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.x-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
 [![License](https://img.shields.io/badge/license-MIT-22c55e)]()
-[![Rules](https://img.shields.io/badge/Rules-68-4f46e5)]()
+[![Rules](https://img.shields.io/badge/Rules-79-4f46e5)]()
 [![Vendor](https://img.shields.io/badge/Vendor-Cisco%20IOS%2FIOS%20XE-005073)]()
 
 </div>
@@ -50,7 +50,7 @@ Mimari üç ana katmandan oluşur:
 | Katman | Görev |
 |--------|-------|
 | **Parser** | Cisco IOS söz dizimini regex + state machine ile yapısal veri modeline çevirir |
-| **Rule Engine** | 68 ayrı kuralı çalıştırarak güvenlik / operasyon / uyumluluk bulguları üretir |
+| **Rule Engine** | 79 ayrı kuralı çalıştırarak güvenlik / operasyon / uyumluluk bulguları üretir |
 | **Secret Scanner** | Açıkta kalan parola / key'leri tespit eder ve otomatik maskeler |
 | **Recommendation Layer** | Her bulgu için aksiyon odaklı, best-practice referanslı öneri üretir |
 
@@ -61,11 +61,11 @@ Bu mimari sayesinde sonuçlar **deterministik** (aynı config → aynı bulgu), 
 ## Öne Çıkan Özellikler
 
 ### Analiz & Denetim
-- **68 hazır kural** (`R001..R068`) — security, routing, L2, compliance, operations
-- **4 severity seviyesi**: `critical`, `high`, `medium`, `low`
+- **79 hazır kural** (`R001..R079`) — security, routing, L2, compliance, operations
+- **5 severity seviyesi**: `critical`, `high`, `medium`, `low`, `info`
 - **5 kategori filtresi**: tek tıkla bulguları daraltma
 - Her bulgu için **aksiyon odaklı öneri metni**
-- Bulgular severity'ye göre otomatik sıralanır (`critical → low`)
+- Bulgular severity'ye göre otomatik sıralanır (`critical` → `info`)
 
 ### Secret / Credential Tarama
 - Cisco **Type 7** ve **Type 0 (cleartext)** parolaları
@@ -74,7 +74,7 @@ Bu mimari sayesinde sonuçlar **deterministik** (aynı config → aynı bulgu), 
 - IPv4 adresleri için son octet maskelemesi (rapor paylaşımı için)
 
 ### Vendor / Platform Fingerprinting
-- **6 vendor algılayıcı**: Cisco IOS, Cisco NX-OS, Arista EOS, Juniper Junos, Huawei, HPE Aruba, Dell OS
+- **Çoklu vendor imzası**: Cisco IOS dışında NX-OS, Junos, Huawei, FortiOS, PAN-OS vb. için erken uyarı
 - Platform modeli (ISR, ASR, Catalyst, Nexus, ASR9k …)
 - OS sürümü ve boot image otomatik çıkarımı
 
@@ -83,7 +83,7 @@ Bu mimari sayesinde sonuçlar **deterministik** (aynı config → aynı bulgu), 
 - **Değiştirilen satırlar** (eski → yeni eşleşmeli)
 - **Eklenen / Silinen** satırlar (parent + child gruplaması ile hiyerarşik)
 - **Yeni oluşan riskler** ve **çözülen riskler** ayrı listeler halinde
-- Vendor / hostname / cihaz rolü uyumsuzluğunda **otomatik uyarı**
+- Vendor / hostname / cihaz türü uyumsuzluğunda **otomatik uyarı**
 
 ### Raporlama & UI
 - **HTML rapor** — paylaşılabilir, basılabilir
@@ -162,7 +162,8 @@ Bu mimari sayesinde sonuçlar **deterministik** (aynı config → aynı bulgu), 
                       ▼                 ▼
         ┌──────────────────────┐   ┌──────────────────────┐
         │   Rule Engine        │   │   Secret Scanner     │
-        │   R001..R061         │   │   R062..R068         │
+        │   R001..R079         │   │   (credential lines) │
+        │   (parser tabanlı)   │   │   R062..R068         │
         └──────────┬───────────┘   └──────────┬───────────┘
                    │                          │
                    └─────────────┬────────────┘
@@ -192,8 +193,9 @@ netconfig-ai/
 │   ├── ai_commentary.py     # bulgu için öneri üretimi + maskeleme entegrasyonu
 │   ├── models.py            # dataclass tabanlı veri modelleri
 │   ├── parser.py            # Cisco IOS regex + state machine parser
-│   ├── rules.py             # 68 kontrol kuralı + kategori map
+│   ├── rules.py             # 79 kontrol kuralı + kategori map
 │   ├── secret_scanner.py    # parola / key tespiti + maskeleme
+│   ├── device_type_policy.py  # cihaz türü tahmini + kural kapsamı filtrelemesi
 │   ├── service.py           # tek dosya & diff analiz orkestrasyonu
 │   └── templates/
 │       ├── index.html       # web arayüzü (dark mode, animasyon, filtre)
@@ -283,7 +285,7 @@ Sistem size şunları sunar:
 - **Silinenler** (gruplanmış)
 - **Yeni oluşan riskler** (severity rozetli, sıralı)
 - **Çözülen riskler** (severity rozetli, sıralı)
-- **Vendor / hostname / cihaz rolü uyumsuzluk uyarıları** (yanlış dosyaları kıyaslama riskine karşı)
+- **Vendor / hostname / cihaz türü uyumsuzluk uyarıları** (yanlış dosyaları kıyaslama riskine karşı)
 
 > Pratik kullanım: *"Son değişiklik ağı bozdu mu?"* sorusunu saniyeler içinde yanıtlar.
 
@@ -291,14 +293,15 @@ Sistem size şunları sunar:
 
 ## Kural Seti
 
-Toplam **68** kural, 5 kategoride:
+Toplam **79** kural, 5 kategoride:
 
 ### Security (35 kural)
 
 `R002`, `R007`, `R008`, `R009`, `R010`, `R011`, `R012`, `R013`, `R014`, `R018`,
-`R020`, `R021`, `R022`, `R023`, `R027`, `R028`, `R031`, `R032`, `R040`, `R041`, `R044`,
+`R020`, `R021`, `R022`, `R027`, `R028`, `R031`, `R032`, `R040`, `R041`,
 `R046`, `R047`, `R048`, `R049`, `R052`,
-`R062`, `R063`, `R064`, `R065`, `R066`, `R067`, `R068` *(secret/credential scanning)*
+`R062`, `R063`, `R064`, `R065`, `R066`, `R067`, `R068` *(secret/credential scanning)*,
+`R071`, `R072`, `R073`, `R078`
 
 ### Routing (13 kural)
 
@@ -308,13 +311,14 @@ Toplam **68** kural, 5 kategoride:
 
 `R025`, `R026`, `R029`, `R030`, `R033`, `R034`, `R035`, `R036`, `R037`, `R045`
 
-### Compliance (1 kural)
+### Compliance (2 kural)
 
-`R017`
+`R017`, `R069`
 
-### Operations (11 kural)
+### Operations (19 kural)
 
-`R001`, `R003`, `R004`, `R015`, `R016`, `R019`, `R024`, `R038`, `R039`, `R042`, `R043`
+`R001`, `R003`, `R004`, `R015`, `R016`, `R019`, `R023`, `R024`, `R038`, `R039`, `R042`, `R043`,
+`R044`, `R070`, `R074`, `R075`, `R076`, `R077`, `R079`
 
 ### Tüm Kuralların Listesi
 
@@ -388,6 +392,17 @@ Toplam **68** kural, 5 kategoride:
 | R066 | critical | BGP neighbor password cleartext |
 | R067 | critical | OSPF MD5 / authentication-key cleartext |
 | R068 | critical | ISAKMP/IPsec pre-shared key cleartext |
+| R069 | medium | NTP sunucusu var; kimlik doğrulama anahtarı / `ntp authenticate` yok |
+| R070 | medium | Syslog kullanılıyor; `logging source-interface` yok |
+| R071 | high | TACACS+ var; `ip tacacs source-interface` yok |
+| R072 | high | RADIUS var; `ip radius source-interface` yok |
+| R073 | high | Yerel kullanıcı `username ... password` (secret değil) |
+| R074 | low | Uzak syslog varken `service timestamps log datetime msec` yok |
+| R075 | medium | `no ip cef` (CEF kapalı) |
+| R076 | low | SNMP kullanılıyor; `snmp-server contact` yok |
+| R077 | low | SNMP kullanılıyor; `snmp-server location` yok |
+| R078 | medium | PKI trustpoint var; `ip domain-name` yok |
+| R079 | medium | `archive` var; `log config` (config change log) yok |
 
 ---
 

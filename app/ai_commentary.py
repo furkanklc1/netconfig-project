@@ -1,9 +1,15 @@
 from app.models import Finding
+from app.rules import RULE_CATEGORIES
 from app.secret_scanner import mask_credentials_in_line
 
 
 def enrich_finding(finding: Finding) -> str:
     if finding.rule_id == "R001":
+        if getattr(finding, "occurrence_count", 1) > 1:
+            return (
+                "Kullanılmayan VLAN'ları kaldırın veya ilgili access/trunk arayüzlerine "
+                "atayın; isimlendirme ve VLAN matrisi dokümantasyonunu güncel tutun."
+            )
         return (
             "Bu VLAN artık kullanılmıyorsa kaldırın; kullanılacaksa ilgili access/trunk "
             "arayüzüne atayın."
@@ -95,8 +101,8 @@ def enrich_finding(finding: Finding) -> str:
         )
     if finding.rule_id == "R019":
         return (
-            "`no ip domain-lookup` ekleyerek hatalı komutların DNS sorgusu yapmasını "
-            "engelleyin."
+            "Operasyonel iyi uygulama: `no ip domain-lookup` ekleyerek hatalı komutların "
+            "DNS sorgusu yapmasını engelleyin (doğrudan bir güvenlik açığı değildir)."
         )
     if finding.rule_id == "R020":
         return (
@@ -114,12 +120,14 @@ def enrich_finding(finding: Finding) -> str:
         )
     if finding.rule_id == "R023":
         return (
-            "Yönetim segmenti dışında CDP'yi kapatın (`no cdp run`) veya en azından "
-            "edge interface'lerde `no cdp enable` uygulayın."
+            "Operasyonel öneri: CDP'yi kapatın (`no cdp run`) veya yalnızca yönetim "
+            "segmentinde bırakın; edge'de `no cdp enable` uygulayın. Bilgi sızdırma "
+            "riski düşüktür ve yönlendirme kimlik doğrulamasıyla aynı öncelikte değildir."
         )
     if finding.rule_id == "R024":
         return (
-            "`clock timezone` ve gerekirse `clock summer-time` ile saat dilimi tanımlayın."
+            "Log ve olay korelasyonu için `clock timezone` ve gerekirse `clock summer-time` "
+            "ile saat dilimi tanımlayın (işletim/denetim önerisi)."
         )
     if finding.rule_id == "R025":
         return (
@@ -188,8 +196,9 @@ def enrich_finding(finding: Finding) -> str:
         )
     if finding.rule_id == "R038":
         return (
-            "`service tcp-keepalives-in` ve `service tcp-keepalives-out` ekleyerek "
-            "yarım açık TCP oturumlarının kaynak tüketmesini engelleyin."
+            "Operasyonel öneri: `service tcp-keepalives-in` ve `service tcp-keepalives-out` "
+            "ile yarım açık TCP oturumlarının kaynak tüketmesini azaltın (güvenlik "
+            "bulgusu değildir)."
         )
     if finding.rule_id == "R039":
         return (
@@ -208,8 +217,8 @@ def enrich_finding(finding: Finding) -> str:
         )
     if finding.rule_id == "R042":
         return (
-            "`archive` modunu etkinleştirip `log config` ile konfigürasyon değişikliklerini "
-            "izleyin. Audit ve geri alma süreçleri kolaylaşır."
+            "Operasyonel/denetim: `archive` modunu etkinleştirip `log config` ile "
+            "konfigürasyon değişikliklerini izleyin; audit ve geri alma süreçleri kolaylaşır."
         )
     if finding.rule_id == "R043":
         return (
@@ -218,8 +227,9 @@ def enrich_finding(finding: Finding) -> str:
         )
     if finding.rule_id == "R044":
         return (
-            "Edge / kullanıcı portlarında CDP'yi kapatın (`no cdp enable`). Cihaz "
-            "bilgilerinin sızmasını önler."
+            "Operasyonel öneri: kullanıcı portlarında CDP'yi kapatın (`no cdp enable`). "
+            "Komşu cihaz bilgisi sızıntısını azaltır; tipik bir güvenlik zafiyeti "
+            "sınıflandırması değildir."
         )
     if finding.rule_id == "R045":
         return (
@@ -251,9 +261,10 @@ def enrich_finding(finding: Finding) -> str:
         )
     if finding.rule_id == "R050":
         return (
-            "OSPF area'ları için authentication tanımlayın: process altında "
-            "`area X authentication message-digest` ve interface'lerde "
-            "`ip ospf message-digest-key 1 md5 <key>`."
+            "Öncelikli güvenlik: OSPF area için `area <id> authentication message-digest` "
+            "ve komşu interface'lerde `ip ospf message-digest-key <id> md5 <güçlü-key>` "
+            "tanımlayın. Kimlik doğrulanmamış OSPF komşuluğu, sahte LSA ve yönlendirme "
+            "manipülasyonuna yol açabilir."
         )
     if finding.rule_id == "R051":
         return (
@@ -359,6 +370,69 @@ def enrich_finding(finding: Finding) -> str:
             "ile Type 6 (AES) encrypt edin ve `password encryption aes` ile master key "
             "tanımlayın. Production için PSK yerine sertifika tabanlı IKE'ye geçin."
         )
+    if finding.rule_id == "R069":
+        return (
+            "`ntp authenticate` ve `ntp authentication-key <id> md5 <key>` veya "
+            "`ntp trusted-key <id>` tanımlayın; mümkünse `ntp server <ip> key <id>` "
+            "ile sunucu bazlı anahtar kullanın. NTP spoofing ve saat kayması riskini azaltır."
+        )
+    if finding.rule_id == "R070":
+        return (
+            "Stabil bir loopback veya yönetim SVI üzerinden `logging source-interface "
+            "<intf>` tanımlayın. Syslog sunucusu ACL'lerinde kaynak IP'yi sabitlemek için "
+            "gerekir."
+        )
+    if finding.rule_id == "R071":
+        return (
+            "`ip tacacs source-interface <Loopback0|mgmt-SVI>` ekleyin. TACACS "
+            "istemci IP'si tutarlı olmalı; aksi halde sunucu tarafı policy ve "
+            "accounting kayıtları tutarsızlaşır."
+        )
+    if finding.rule_id == "R072":
+        return (
+            "`ip radius source-interface <Loopback0|mgmt-SVI>` ekleyin. RADIUS "
+            "Accounting/CoA için kaynak IP'nin öngörülebilir olması gerekir."
+        )
+    if finding.rule_id == "R073":
+        return (
+            "`username <ad> secret <hash>` veya `algorithm-type scrypt` ile güçlü "
+            "hash kullanın. `password` yerine `secret` tercih edin; mümkünse yerel "
+            "kullanıcıyı kaldırıp yalnızca TACACS+/RADIUS ile oturum açtırın."
+        )
+    if finding.rule_id == "R074":
+        return (
+            "`service timestamps log datetime msec localtime` (ve gerekiyorsa "
+            "`show-timezone`) ekleyin. SIEM ve korelasyon için milisaniye damgası "
+            "standarttır."
+        )
+    if finding.rule_id == "R075":
+        return (
+            "Üretimde `no ip cef` kullanmayın; `ip cef` veya varsayılan CEF-on durumuna "
+            "dönün. Sorun giderme için geçici kapatıldıysa change kaydı ve geri alma "
+            "planı ekleyin."
+        )
+    if finding.rule_id == "R076":
+        return (
+            "`snmp-server contact <\"Ad Soyad / e-posta / telefon\">` tanımlayın. "
+            "SNMP üzerinden envanter toplayan ekiplerin acil durumda ulaşacağı bilgi "
+            "olmalıdır."
+        )
+    if finding.rule_id == "R077":
+        return (
+            "`snmp-server location <\"Bina / Kat / Kabinet\">` ile fiziksel konum "
+            "belirtin. Kurumsal envanter ve saha müdahalesi için önerilir."
+        )
+    if finding.rule_id == "R078":
+        return (
+            "`ip domain-name <sirket.example.com>` tanımlayın. PKI enrollment, "
+            "SCEP/EST ve sertifika CN/SAN doğrulaması için FQDN gereklidir."
+        )
+    if finding.rule_id == "R079":
+        return (
+            "Operasyonel/denetim: `archive` modülü altına `log config` ve `logging enable` "
+            "ekleyin; path/maximum ayarlarınızı koruyarak değişiklikleri izlenebilir yapın "
+            "(güvenlik bulgusu değildir)."
+        )
     return "Konfigürasyonu iş gereksinimine göre gözden geçirin."
 
 
@@ -369,8 +443,10 @@ def format_report(findings: list[Finding]) -> list[dict]:
             "severity": item.severity,
             "message": item.message,
             "context": mask_credentials_in_line(item.context),
-            "category": item.category,
+            "category": RULE_CATEGORIES.get(item.rule_id, item.category),
             "recommendation": enrich_finding(item),
+            "occurrence_count": getattr(item, "occurrence_count", 1),
+            "stable_key": getattr(item, "stable_key", None),
         }
         for item in findings
     ]

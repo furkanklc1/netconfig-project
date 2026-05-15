@@ -34,6 +34,7 @@
       table.summary td.h { background: #fef2f2; color: #991b1b; }
       table.summary td.m { background: #fff7ed; color: #9a3412; }
       table.summary td.l { background: #eff6ff; color: #1e3a8a; }
+      table.summary td.i { background: #f1f5f9; color: #475569; }
       table.summary td.t { background: #f8fafc; color: #334155; }
       table.summary .num { font-size: 22pt; font-weight: 700; display: block; }
       table.summary .lbl { font-size: 9pt; }
@@ -45,6 +46,7 @@
       table.findings tr.high td { background: #fef2f2; }
       table.findings tr.medium td { background: #fff7ed; }
       table.findings tr.low td { background: #eff6ff; }
+      table.findings tr.info td { background: #f8fafc; }
       .badge {
         display: inline-block;
         padding: 1px 6px;
@@ -57,6 +59,7 @@
       .badge-high { background: #dc2626; color: #fff; }
       .badge-medium { background: #d97706; color: #fff; }
       .badge-low { background: #2563eb; color: #fff; }
+      .badge-info { background: #64748b; color: #fff; }
       .badge-cat { background: #e2e8f0; color: #334155; }
       .badge-security { background: #fee2e2; color: #991b1b; }
       .badge-routing { background: #ede9fe; color: #5b21b6; }
@@ -123,6 +126,12 @@
         <td class="value">{{ device_info.boot_image }}</td>
       </tr>
       {% endif %}
+      {% if device_info.device_type_label %}
+      <tr>
+        <td class="label">Cihaz türü</td>
+        <td class="value">{{ device_info.device_type_label }}{% if device_info.device_type_note %} — {{ device_info.device_type_note }}{% endif %}</td>
+      </tr>
+      {% endif %}
       {% endif %}
     </table>
 
@@ -130,23 +139,27 @@
 
     <table class="summary">
       <tr>
-        <td class="c" width="20%">
+        <td class="c" width="14%">
           <span class="num">{{ severity_counts.critical }}</span>
           <span class="lbl">CRITICAL</span>
         </td>
-        <td class="h" width="20%">
+        <td class="h" width="14%">
           <span class="num">{{ severity_counts.high }}</span>
           <span class="lbl">HIGH</span>
         </td>
-        <td class="m" width="20%">
+        <td class="m" width="14%">
           <span class="num">{{ severity_counts.medium }}</span>
           <span class="lbl">MEDIUM</span>
         </td>
-        <td class="l" width="20%">
+        <td class="l" width="14%">
           <span class="num">{{ severity_counts.low }}</span>
           <span class="lbl">LOW</span>
         </td>
-        <td class="t" width="20%">
+        <td class="i" width="14%">
+          <span class="num">{{ severity_counts.info }}</span>
+          <span class="lbl">INFO</span>
+        </td>
+        <td class="t" width="16%">
           <span class="num">{{ report|length }}</span>
           <span class="lbl">TOPLAM</span>
         </td>
@@ -186,8 +199,12 @@
           <td><span class="badge badge-{{ item.severity }}">{{ item.severity|upper }}</span></td>
           <td><span class="badge badge-{{ item.category }}">{{ item.category }}</span></td>
           <td>
-            <strong>{{ item.message }}</strong><br>
-            <span class="ctx">{{ item.context }}</span>
+            <strong>{{ item.message }}</strong>
+            {% if item.occurrence_count is defined and item.occurrence_count > 1 %}
+            <span class="badge" style="margin-left:6px;">{{ item.occurrence_count }} konum</span>
+            {% endif %}
+            <br>
+            <span class="ctx" style="white-space: pre-wrap;">{{ item.context }}</span>
             <div class="rec"><strong>Öneri:</strong> {{ item.recommendation }}</div>
           </td>
         </tr>

@@ -23,6 +23,35 @@ def _parse_vlan_token(token: str) -> list[int]:
 _IPV4_RE = re.compile(r"^\d+\.\d+\.\d+\.\d+$")
 
 
+def _line_sets_global_bpduguard_default(line: str) -> bool:
+    """
+    Global BPDU Guard varsayılanı: tüm PortFast (genelde access) portlara miras alır.
+    IOS / IOS-XE sözdizimi varyantlarını kapsar; 'no ...' satırlarını dışlar.
+    """
+    if not line or line.startswith("!"):
+        return False
+    if line.lower().startswith("no "):
+        return False
+    if re.match(
+        r"^spanning-tree\s+portfast\s+(?:edge\s+)?bpduguard\s+default\b",
+        line,
+        flags=re.IGNORECASE,
+    ):
+        return True
+    if re.match(r"^spanning-tree\s+bpduguard\s+default\b", line, flags=re.IGNORECASE):
+        return True
+    return False
+
+
+def _apply_global_bpduguard_inheritance(data: ConfigData) -> None:
+    """Global 'portfast bpduguard default' etkinse access portlarında bpduguard etkindir."""
+    if not data.bpduguard_default_enabled:
+        return
+    for intf in data.interfaces:
+        if intf.switchport_mode == "access":
+            intf.bpduguard_enabled = True
+
+
 def _consume_acl_endpoint(pieces: list[str], idx: int) -> tuple[str, int]:
     if idx >= len(pieces):
         return "", idx
@@ -137,8 +166,84 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             data.has_logging_host = True
             continue
 
+        if re.match(r"^logging\s+source-interface\s+\S+", line, flags=re.IGNORECASE):
+            data.logging_source_interface_set = True
+            continue
+
         if re.match(r"^ntp\s+server\s+\S+", line, flags=re.IGNORECASE):
             data.has_ntp_server = True
+            if re.search(r"\bkey\s+\d+\b", line, flags=re.IGNORECASE):
+                data.ntp_auth_keys_configured = True
+            continue
+
+        if re.match(r"^ntp\s+authentication-key\s+\d+", line, flags=re.IGNORECASE):
+            data.ntp_auth_keys_configured = True
+            continue
+
+        if re.match(r"^ntp\s+trusted-key\b", line, flags=re.IGNORECASE):
+            data.ntp_auth_keys_configured = True
+            continue
+
+        if re.match(r"^ntp\s+authenticate\b", line, flags=re.IGNORECASE):
+            data.ntp_authenticate_enabled = True
+            continue
+
+        if re.match(r"^tacacs-server\s+host\b", line, flags=re.IGNORECASE) or re.match(
+            r"^tacacs\s+server\s+\S+", line, flags=re.IGNORECASE
+        ):
+            data.tacacs_server_configured = True
+            continue
+
+        if re.match(r"^radius-server\s+host\b", line, flags=re.IGNORECASE) or re.match(
+            r"^radius\s+server\s+\S+", line, flags=re.IGNORECASE
+        ):
+            data.radius_server_configured = True
+            continue
+
+        if re.match(r"^ip\s+tacacs\s+source-interface\s+\S+", line, flags=re.IGNORECASE):
+            data.ip_tacacs_source_interface_set = True
+            continue
+
+        if re.match(r"^ip\s+radius\s+source-interface\s+\S+", line, flags=re.IGNORECASE):
+            data.ip_radius_source_interface_set = True
+            continue
+
+        if re.match(r"^username\s+\S+\s+password\b", line, flags=re.IGNORECASE):
+            data.username_password_lines.append(line)
+            continue
+
+        if re.match(
+            r"^service\s+timestamps\s+log\s+datetime\s+msec",
+            line,
+            flags=re.IGNORECASE,
+        ):
+            data.service_timestamps_log_msec = True
+            continue
+
+        if re.match(r"^no\s+ip\s+cef\b", line, flags=re.IGNORECASE):
+            data.ip_cef_disabled = True
+            continue
+
+        if re.match(r"^snmp-server\s+contact\b", line, flags=re.IGNORECASE):
+            data.snmp_contact_set = True
+            continue
+
+        if re.match(r"^snmp-server\s+location\b", line, flags=re.IGNORECASE):
+            data.snmp_location_set = True
+            continue
+
+        if re.match(
+            r"^crypto\s+(pki|ca)\s+trustpoint\s+\S+", line, flags=re.IGNORECASE
+        ):
+            data.crypto_pki_trustpoint_seen = True
+            continue
+
+        if re.match(r"^ip\s+domain-name\s+\S+", line, flags=re.IGNORECASE):
+            data.ip_domain_name_set = True
+            continue
+
+        if re.match(r"^log\s+config\b", line, flags=re.IGNORECASE):
+            data.archive_log_config_enabled = True
             continue
 
         if re.match(r"^banner\s+motd\b", line, flags=re.IGNORECASE):
@@ -173,11 +278,7 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             data.has_clock_timezone = True
             continue
 
-        if re.match(
-            r"^spanning-tree\s+portfast\s+bpduguard\s+default$",
-            line,
-            flags=re.IGNORECASE,
-        ):
+        if _line_sets_global_bpduguard_default(line):
             data.bpduguard_default_enabled = True
             continue
 
@@ -671,5 +772,14 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
         if re.match(r"^storm-control\b", line, flags=re.IGNORECASE):
             current_interface.storm_control_enabled = True
             continue
+
+    # Global satırlar bazen üst seviye blok sırası yüzünden kaçabilir; tam metin taraması.
+    if not data.bpduguard_default_enabled:
+        for raw_line in text.splitlines():
+            if _line_sets_global_bpduguard_default(raw_line.strip()):
+                data.bpduguard_default_enabled = True
+                break
+
+    _apply_global_bpduguard_inheritance(data)
 
     return data

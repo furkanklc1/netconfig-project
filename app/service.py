@@ -1,9 +1,17 @@
 import difflib
+import hashlib
 import re
+from collections import defaultdict
 
 from app.ai_commentary import format_report
+from app.models import Finding
 from app.parser import parse_cisco_ios_config
-from app.rules import run_rules
+from app.device_type_policy import (
+    DEVICE_TYPE_LABELS_TR,
+    filter_findings_by_device_type,
+    infer_device_type,
+)
+from app.rules import RULE_CATEGORIES, run_rules
 from app.secret_scanner import mask_credentials_in_line, scan_secrets
 
 
@@ -102,13 +110,128 @@ def _platform_from_boot_image(image_name: str) -> str | None:
 
 
 _VENDOR_PATTERNS: list[tuple[str, str]] = [
+    # Ayırt edici, Cisco IOS ile kolay karışmayan kalıplar önce (ilk eşleşme kazanır).
+    (
+        "Fortinet FortiOS",
+        r"^\s*config\s+system\s+global\s*$"
+        r"|^\s*config\s+vdom\s*$"
+        r"|^\s*config\s+firewall\s+(policy|address|addrgrp|service|vip)\s*$"
+        r"|^\s*config\s+router\s+(static|policy|bgp|ospf)\s*$"
+        r"|^\s*config\s+vpn\s+ipsec\s+phase\d+-interface\s*$"
+        r"|^\s*set\s+vdom\s+",
+    ),
+    (
+        "Palo Alto PAN-OS",
+        r"^\s*set\s+deviceconfig\s+"
+        r"|^\s*set\s+network\s+virtual-router\s+"
+        r"|^\s*set\s+vsys\s+"
+        r"|^\s*set\s+profiles\s+(security|decryption|url-filtering)\s+"
+        r"|^\s*set\s+rulebase\s+security\s+rules\s+",
+    ),
+    (
+        "MikroTik RouterOS",
+        r"^\s*/(?:ip|ipv6|interface|routing|system|queue|tool|disk|certificate|ppp|snmp)\s+"
+        r"|^\s*#\s+.*\bby\s+RouterOS\s+"
+        r"|^\s*\[\S+@(?:MikroTik|mikrotik)\]\s*>",
+    ),
+    (
+        "F5 BIG-IP",
+        r"^\s*ltm\s+(pool|node|virtual|snat|monitor|rule|persistence|policy)\s+"
+        r"|^\s*apm\s+"
+        r"|^\s*net\s+self\s+"
+        r"|^\s*auth\s+partition\s+"
+        r"|^\s*security\s+firewall\s+",
+    ),
+    (
+        "Cisco ASA",
+        r"^\s*nat\s*\(\s*\S+\s*,\s*\S+\s*\)\s+"
+        r"|^\s*same-security-traffic\s+"
+        r"|^\s*access-group\s+\S+\s+(in|out)\s+interface\s+"
+        r"|^\s*threat-detection\s+"
+        r"|^\s*policy-map\s+global_policy\b",
+    ),
+    (
+        "Nokia SR OS",
+        r"^\s*#+\s*TiMOS-[A-Z0-9-]+"
+        r"|^\s*configure\s+service\s+"
+        r"|^\s*configure\s+router\s+\""
+        r"|^\s*sap\s+\S+\s+\S+\s+create\s+"
+        r"|^\s*epipe\s+\d+\s+create\s+",
+    ),
+    (
+        "Extreme Networks EXOS",
+        r"^\s*create\s+vlan\s+"
+        r"|^\s*configure\s+vlan\s+\S+\s+(add|delete|tag|untag)\s+"
+        r"|^\s*enable\s+sharing\s+\d+\s+grouping\s+"
+        r"|^\s*configure\s+slot\s+\d+\s+"
+        r"|^\s*disable\s+clipaging\s*$",
+    ),
+    (
+        "Brocade / Ruckus ICX (FastIron)",
+        r"^\s*vlan\s+\d+\s+name\s+.+\s+by\s+port\b"
+        r"|^\s*spanning-tree\s+802-1w\b"
+        r"|^\s*spanning-tree\s+single\s+802-1w\b"
+        r"|^\s*inline\s+power\s+by\s+port\b"
+        r"|^\s*stack\s+unit\s+\d+\s+"
+        r"|^\s*default\s+802-1x\s+",
+    ),
+    (
+        "Cumulus Linux",
+        r"^\s*iface\s+swp\d+"
+        r"|^\s*auto\s+bridge\b"
+        r"|^\s*nv\s+set\s+"
+        r"|^\s*#\s+This\s+file\s+describes\s+the\s+network\s+interfaces",
+    ),
+    (
+        "H3C Comware",
+        r"^\s*radius[- ]scheme\s+"
+        r"|^\s*hwtacacs-server\s+\d{1,3}(?:\.\d{1,3}){3}\b"
+        r"|^\s*domain\s+default\s+allow\s+"
+        r"|^\s*ip\s+https\s+certificate\s+"
+        r"|^\s*super\s+password\s+simple\s+",
+    ),
+    (
+        "SonicWall",
+        r"^\s*address-object\s+ipv4\s+"
+        r"|^\s*ipv4\s+name-servers\s+"
+        r"|^\s*network\s+object\s+ipv4\b"
+        r"|^\s*policy\s+ipv4\s+from\s+",
+    ),
     (
         "Juniper",
-        r"^\s*set\s+(system|interfaces|protocols|routing-options|firewall|chassis)\s+\S+",
+        r"^\s*set\s+(system|interfaces|protocols|routing-options|firewall|chassis)\s+\S+"
+        r"|^\s*version\s+\S*JUNOS\S*\s*;?\s*$"
+        r"|^\s*apply-groups\s+"
+        r"|^\s*groups\s*\{",
     ),
     (
         "Huawei",
-        r"^\s*sysname\s+\S+|^\s*display\s+current-configuration|^\s*super\s+password\s+",
+        r"^\s*sysname\s+\S+"
+        r"|^\s*display\s+current-configuration"
+        r"|^\s*super\s+password\s+"
+        r"|^\s*vlan\s+batch\b"
+        r"|^\s*info-center\b"
+        r"|^\s*user-interface\s+(vty|con|console)\b"
+        r"|^\s*interface\s+Vlanif\d+"
+        r"|^\s*stp\s+mode\b"
+        r"|^\s*stp\s+region-configuration\b"
+        r"|^\s*stp\s+enable\b"
+        r"|^\s*undo\s+\S+"
+        r"|^\s*hwtacacs-server\s+template\b"
+        r"|^\s*radius-server\s+template\b"
+        r"|^\s*aaa\s+authentication-scheme\b"
+        r"|^\s*aaa\s+authorization-scheme\b"
+        r"|^\s*traffic-policy\s+\S+\s+(inbound|outbound)\b"
+        r"|^\s*ip\s+vpn-instance\b"
+        r"|^\s*vrrp\s+vrid\s+\d+\s+virtual-ip\b"
+        r"|^\s*dhcp\s+server\s+ip-range\b"
+        r"|^\s*port\s+link-type\b"
+        r"|^\s*port\s+default\s+vlan\b"
+        r"|^\s*command-privilege\s+level\b"
+        r"|^\s*hotkey\s+CTRL_\w+"
+        r"|^\s*clock\s+timezone\s+\S+\s+add\b"
+        r"|^\s*nqa\s+test-instance\b"
+        r"|^\s*netconf\s+ssh\s+server\s+enable\b",
     ),
     (
         "Cisco NX-OS",
@@ -190,14 +313,7 @@ def detect_device_info(text: str) -> dict:
             text,
             flags=re.MULTILINE | re.IGNORECASE,
         )
-        has_hostname = re.search(
-            r"^\s*hostname\s+\S+",
-            text,
-            flags=re.MULTILINE | re.IGNORECASE,
-        )
         if has_cisco_ios_markers:
-            info["vendor"] = "Cisco IOS"
-        elif has_hostname:
             info["vendor"] = "Cisco IOS"
 
     version_match = re.search(
@@ -237,35 +353,229 @@ def detect_device_info(text: str) -> dict:
     return info
 
 
-def _detect_device_role(text: str) -> str:
-    has_router_keywords = bool(
-        re.search(
-            r"^\s*(router\s+(ospf|bgp|eigrp|rip)|ip\s+route\s+\S+)",
-            text,
-            flags=re.MULTILINE | re.IGNORECASE,
-        )
+_NEIGHBOR_AGG_RULE_IDS = frozenset({"R006", "R051", "R057", "R058", "R060", "R061"})
+_SECRET_RULE_IDS = frozenset({f"R{i:03d}" for i in range(62, 69)})
+
+
+def _rule_category(rule_id: str) -> str:
+    return RULE_CATEGORIES.get(rule_id, "general")
+
+
+def _iface_from_context(context: str) -> str | None:
+    m = re.match(r"^\s*interface\s+(\S+)\s*$", context.strip(), flags=re.IGNORECASE)
+    return m.group(1) if m else None
+
+
+def _message_body_after_interface_name(message: str, iface: str) -> str:
+    if not iface:
+        return message
+    variants = [
+        f"{iface} üzerindeki ",
+        f"{iface} üzerinde ",
+        f"{iface} interface'inde ",
+        f"{iface} trunk arayüzünde ",
+        f"{iface} access portu ",
+        f"{iface} access portunda ",
+        f"{iface} L3 interface'inde ",
+        f"{iface} shutdown durumda ",
+        f"{iface} ",
+    ]
+    for pref in sorted(variants, key=len, reverse=True):
+        if message.startswith(pref):
+            return message[len(pref) :].lstrip()
+    return message
+
+
+def _neutralize_ipv4(msg: str) -> str:
+    return re.sub(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "<peer>", msg)
+
+
+def _format_vlan_runs(nums: list[int]) -> str:
+    if not nums:
+        return ""
+    nums = sorted(set(nums))
+    parts: list[str] = []
+    i = 0
+    while i < len(nums):
+        start = nums[i]
+        j = i
+        while j + 1 < len(nums) and nums[j + 1] == nums[j] + 1:
+            j += 1
+        end = nums[j]
+        if start == end:
+            parts.append(str(start))
+        elif end == start + 1:
+            parts.extend([str(start), str(end)])
+        else:
+            parts.append(f"{start}-{end}")
+        i = j + 1
+    text = ", ".join(parts)
+    if len(text) > 240:
+        return text[:237] + "..."
+    return text
+
+
+def _merge_r001_unused_vlans(group: list[Finding]) -> Finding:
+    vlans: list[int] = []
+    for item in group:
+        m = re.search(r"vlan\s+(\d+)", item.context.strip(), flags=re.IGNORECASE)
+        if m:
+            vlans.append(int(m.group(1)))
+    vlans = sorted(set(vlans))
+    summary = _format_vlan_runs(vlans)
+    msg = (
+        f"Tanımlı ancak hiçbir interface'te kullanılmayan VLAN: {len(vlans)} adet "
+        f"({summary})."
     )
-    has_switch_keywords = bool(
-        re.search(
-            r"^\s*(switchport\s+|spanning-tree\s+|vlan\s+\d+)",
-            text,
-            flags=re.MULTILINE | re.IGNORECASE,
-        )
+    ctx = ", ".join(f"vlan {v}" for v in vlans[:40])
+    if len(vlans) > 40:
+        ctx += f" (+{len(vlans) - 40} VLAN daha)"
+    return Finding(
+        rule_id="R001",
+        severity=group[0].severity,
+        message=msg,
+        context=ctx,
+        category=_rule_category("R001"),
+        stable_key="R001:unused-vlan-batch",
+        occurrence_count=len(vlans),
     )
-    if has_router_keywords and not has_switch_keywords:
-        return "router"
-    if has_switch_keywords and not has_router_keywords:
-        return "switch"
-    if has_switch_keywords and has_router_keywords:
-        return "layer3-switch"
-    return "unknown"
+
+
+def aggregate_findings(findings: list[Finding]) -> list[Finding]:
+    """Aynı kuralın çoklu arayüz/neighbor/satır tekrarlarını tek bulguda toplar (denetim UX)."""
+    if len(findings) < 2:
+        return findings
+
+    r001: list[Finding] = []
+    iface_groups: dict[tuple[str, str, str, str], list[Finding]] = defaultdict(list)
+    neighbor_groups: dict[tuple[str, str], list[Finding]] = defaultdict(list)
+    secret_groups: dict[tuple[str, str, str], list[Finding]] = defaultdict(list)
+    rest: list[Finding] = []
+
+    for item in findings:
+        rid = item.rule_id
+        if rid == "R001" and re.match(r"^\s*vlan\s+\d+", item.context.strip(), flags=re.IGNORECASE):
+            r001.append(item)
+            continue
+        if rid in _SECRET_RULE_IDS:
+            secret_groups[(rid, item.severity, item.message)].append(item)
+            continue
+        ctx = item.context.strip()
+        if rid in _NEIGHBOR_AGG_RULE_IDS and ctx.lower().startswith("neighbor "):
+            neighbor_groups[(rid, item.severity)].append(item)
+            continue
+        iface = _iface_from_context(item.context)
+        if iface:
+            body = _message_body_after_interface_name(item.message, iface)
+            cat = _rule_category(rid)
+            iface_groups[(rid, item.severity, cat, body)].append(item)
+            continue
+        rest.append(item)
+
+    out: list[Finding] = rest
+
+    if len(r001) > 1:
+        out.append(_merge_r001_unused_vlans(r001))
+    elif r001:
+        out.append(r001[0])
+
+    for group in secret_groups.values():
+        if len(group) == 1:
+            out.append(group[0])
+            continue
+        lines = list(dict.fromkeys(g.context for g in group))
+        shown = lines[:18]
+        ctx = "\n".join(shown)
+        if len(lines) > 18:
+            ctx += f"\n… (+{len(lines) - 18} ek satır, toplam {len(group)} eşleşme)"
+        elif len(group) > len(lines):
+            ctx += f"\n(toplam {len(group)} eşleşme)"
+        sk = f"{group[0].rule_id}:secret-batch"
+        out.append(
+            Finding(
+                rule_id=group[0].rule_id,
+                severity=group[0].severity,
+                message=group[0].message,
+                context=ctx,
+                category=_rule_category(group[0].rule_id),
+                stable_key=sk,
+                occurrence_count=len(group),
+            )
+        )
+
+    for (rid, sev), group in neighbor_groups.items():
+        if len(group) == 1:
+            out.append(group[0])
+            continue
+        neutral = _neutralize_ipv4(group[0].message)
+        ctx_parts = [g.context.strip() for g in group[:25]]
+        ctx = ", ".join(ctx_parts)
+        if len(group) > 25:
+            ctx += f" (+{len(group) - 25} neighbor daha)"
+        sk = f"{rid}:{sev}:neighbor-batch"
+        out.append(
+            Finding(
+                rule_id=rid,
+                severity=sev,
+                message=f"{len(group)} BGP neighbor kaydında aynı eksiklik: {neutral}",
+                context=ctx,
+                category=_rule_category(rid),
+                stable_key=sk,
+                occurrence_count=len(group),
+            )
+        )
+
+    for (rid, sev, cat, body), group in iface_groups.items():
+        if len(group) == 1:
+            out.append(group[0])
+            continue
+        names = []
+        for g in group:
+            n = _iface_from_context(g.context)
+            if n:
+                names.append(n)
+        names = sorted(set(names), key=lambda s: s.lower())
+        shown = names[:30]
+        ctx = ", ".join(f"interface {n}" for n in shown)
+        if len(names) > 30:
+            ctx += f" (+{len(names) - 30} arayüz daha)"
+        h = hashlib.sha256(f"{rid}|{sev}|{body}".encode("utf-8")).hexdigest()[:10]
+        sk = f"{rid}:{sev}:iface-batch:{h}"
+        msg = f"{len(group)} arayüzde aynı eksiklik: {body}"
+        out.append(
+            Finding(
+                rule_id=rid,
+                severity=sev,
+                message=msg,
+                context=ctx,
+                category=cat,
+                stable_key=sk,
+                occurrence_count=len(group),
+            )
+        )
+
+    return out
+
+
+def audit_bundle(config_text: str) -> tuple[list[dict], dict]:
+    """Parse + cihaz türü tahmini + kurallar + secret + toplulaştırma; rapor ve device_info."""
+    parsed = parse_cisco_ios_config(config_text)
+    dt_key = infer_device_type(config_text)
+    findings = run_rules(parsed)
+    findings = filter_findings_by_device_type(findings, dt_key)
+    findings.extend(scan_secrets(config_text))
+    findings = aggregate_findings(findings)
+    report = format_report(findings)
+    info = detect_device_info(config_text)
+    info["device_type"] = dt_key
+    info["device_type_label"] = DEVICE_TYPE_LABELS_TR.get(dt_key, dt_key)
+    info["device_type_source"] = "inferred"
+    info["device_type_note"] = "Cihaz türü konfigürasyondan otomatik tahmin edildi"
+    return report, info
 
 
 def audit_config_text(config_text: str) -> list[dict]:
-    parsed = parse_cisco_ios_config(config_text)
-    findings = run_rules(parsed)
-    findings.extend(scan_secrets(config_text))
-    return format_report(findings)
+    return audit_bundle(config_text)[0]
 
 
 def count_categories(findings: list[dict]) -> dict[str, int]:
@@ -277,6 +587,9 @@ def count_categories(findings: list[dict]) -> dict[str, int]:
 
 
 def _finding_key(item: dict) -> tuple[str, str, str]:
+    stable = item.get("stable_key")
+    if stable:
+        return (item["rule_id"], stable, "")
     return (item["rule_id"], item["context"], item["message"])
 
 
@@ -379,8 +692,8 @@ def _build_diff_groups(old_text: str, new_text: str) -> dict:
 
 
 def audit_config_diff(old_text: str, new_text: str) -> dict:
-    old_report = audit_config_text(old_text)
-    new_report = audit_config_text(new_text)
+    old_report, old_device_info = audit_bundle(old_text)
+    new_report, new_device_info = audit_bundle(new_text)
 
     old_map = {_finding_key(item): item for item in old_report}
     new_map = {_finding_key(item): item for item in new_report}
@@ -401,21 +714,21 @@ def audit_config_diff(old_text: str, new_text: str) -> dict:
 
     old_hostname = _extract_hostname(old_text)
     new_hostname = _extract_hostname(new_text)
-    old_role = _detect_device_role(old_text)
-    new_role = _detect_device_role(new_text)
-    old_device_info = detect_device_info(old_text)
-    new_device_info = detect_device_info(new_text)
-
+    old_inferred = infer_device_type(old_text)
+    new_inferred = infer_device_type(new_text)
     mismatch_warnings: list[str] = []
+    if old_device_info.get("device_type") != new_device_info.get("device_type"):
+        mismatch_warnings.append(
+            "Konfigürasyon imzasına göre tahmin edilen cihaz türleri iki dosya arasında "
+            "farklı görünüyor "
+            f"(eski: {old_device_info.get('device_type_label')}, "
+            f"yeni: {new_device_info.get('device_type_label')}). "
+            "Aynı cihazın iki sürümünü karşılaştırdığınızdan emin olun."
+        )
     if old_hostname and new_hostname and old_hostname != new_hostname:
         mismatch_warnings.append(
             f"Yüklenen iki dosyanın hostname'i farklı: '{old_hostname}' ve "
             f"'{new_hostname}'. Diff sonucu yanıltıcı olabilir."
-        )
-    if old_role != "unknown" and new_role != "unknown" and old_role != new_role:
-        mismatch_warnings.append(
-            f"Cihaz rolleri farklı görünüyor (eski: {old_role}, yeni: {new_role}). "
-            "Aynı cihazın iki versiyonunu karşılaştırdığınızdan emin olun."
         )
     if (
         old_device_info["vendor"] != "Unknown"
@@ -447,8 +760,8 @@ def audit_config_diff(old_text: str, new_text: str) -> dict:
         "changed_line_findings": changed_line_findings,
         "old_hostname": old_hostname,
         "new_hostname": new_hostname,
-        "old_role": old_role,
-        "new_role": new_role,
+        "old_device_type": old_inferred,
+        "new_device_type": new_inferred,
         "old_device_info": old_device_info,
         "new_device_info": new_device_info,
         "mismatch_warnings": mismatch_warnings,

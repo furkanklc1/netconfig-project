@@ -1,16 +1,22 @@
 import io
 import secrets
+import sys
 import uuid
 from collections import OrderedDict
 from datetime import datetime
+from pathlib import Path
+
+# Çalışma dizini IDE/terminalden farklı olsa bile `app.*` importları çalışsın.
+_ROOT = Path(__file__).resolve().parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 from flask import Flask, Response, abort, redirect, render_template, request, url_for
 
 from app.service import (
+    audit_bundle,
     audit_config_diff,
-    audit_config_text,
     count_categories,
-    detect_device_info,
     validate_config_text,
 )
 
@@ -21,7 +27,7 @@ _VIEW_CACHE: "OrderedDict[str, dict]" = OrderedDict()
 _DOWNLOAD_CACHE: "OrderedDict[str, dict]" = OrderedDict()
 _CACHE_MAX = 64
 
-_SEVERITY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+_SEVERITY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
 
 
 def _sort_findings(findings: list[dict]) -> list[dict]:
@@ -29,7 +35,7 @@ def _sort_findings(findings: list[dict]) -> list[dict]:
 
 
 def _count_severities(findings: list[dict]) -> dict[str, int]:
-    counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+    counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
     for item in findings:
         sev = item.get("severity")
         if sev in counts:
@@ -120,6 +126,7 @@ def index():
     }
 
     analysis_type = request.form.get("analysis_type", "single")
+
     if analysis_type == "diff":
         payload["analysis_mode"] = "diff"
         old_file = request.files.get("old_config_file")
@@ -186,8 +193,9 @@ def index():
                     payload["uploaded_name"] = ""
                 else:
                     payload["has_input"] = True
-                    payload["report"] = _sort_findings(audit_config_text(raw_config))
-                    payload["device_info"] = detect_device_info(raw_config)
+                    report, device_info = audit_bundle(raw_config)
+                    payload["report"] = _sort_findings(report)
+                    payload["device_info"] = device_info
 
     view_token, download_token = _store_result(payload)
     return redirect(url_for("index", r=view_token, dl=download_token))

@@ -112,6 +112,21 @@ class ConfigData:
     bgp_local_as: int | None = None
     bgp_router_id_set: bool = False
     bgp_log_neighbor_changes: bool = False
+    ntp_authenticate_enabled: bool = False
+    ntp_auth_keys_configured: bool = False
+    logging_source_interface_set: bool = False
+    tacacs_server_configured: bool = False
+    radius_server_configured: bool = False
+    ip_tacacs_source_interface_set: bool = False
+    ip_radius_source_interface_set: bool = False
+    username_password_lines: list[str] = field(default_factory=list)
+    service_timestamps_log_msec: bool = False
+    ip_cef_disabled: bool = False
+    snmp_contact_set: bool = False
+    snmp_location_set: bool = False
+    crypto_pki_trustpoint_seen: bool = False
+    ip_domain_name_set: bool = False
+    archive_log_config_enabled: bool = False
 
 
 @dataclass
@@ -121,3 +136,7 @@ class Finding:
     message: str
     context: str
     category: str = "general"
+    # Aynı kuralın çoklu arayüz/neighbor/satır tekrarları tek satırda birleştirildiğinde
+    # diff karşılaştırması ve rapor için sabit kimlik (opsiyonel).
+    stable_key: str | None = None
+    occurrence_count: int = 1

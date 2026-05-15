@@ -24,7 +24,7 @@ RULE_CATEGORIES: dict[str, str] = {
     "R020": "security",
     "R021": "security",
     "R022": "security",
-    "R023": "security",
+    "R023": "operations",
     "R024": "operations",
     "R025": "l2",
     "R026": "l2",
@@ -45,7 +45,7 @@ RULE_CATEGORIES: dict[str, str] = {
     "R041": "security",
     "R042": "operations",
     "R043": "operations",
-    "R044": "security",
+    "R044": "operations",
     "R045": "l2",
     "R046": "security",
     "R047": "security",
@@ -70,6 +70,17 @@ RULE_CATEGORIES: dict[str, str] = {
     "R066": "security",
     "R067": "security",
     "R068": "security",
+    "R069": "compliance",
+    "R070": "operations",
+    "R071": "security",
+    "R072": "security",
+    "R073": "security",
+    "R074": "operations",
+    "R075": "operations",
+    "R076": "operations",
+    "R077": "operations",
+    "R078": "security",
+    "R079": "operations",
 }
 
 
@@ -361,8 +372,11 @@ def _rule_domain_lookup_enabled(data: ConfigData) -> list[Finding]:
         return [
             Finding(
                 rule_id="R019",
-                severity="low",
-                message="`no ip domain-lookup` ayarlanmamış. Yanlış komutlar DNS arayabilir.",
+                severity="info",
+                message=(
+                    "`no ip domain-lookup` ayarlanmamış (operasyonel iyi uygulama; "
+                    "güvenlik zafiyeti değildir). Yanlış komutlar DNS sorgusu tetikleyebilir."
+                ),
                 context="global configuration",
             )
         ]
@@ -413,8 +427,12 @@ def _rule_cdp_globally_enabled(data: ConfigData) -> list[Finding]:
         return [
             Finding(
                 rule_id="R023",
-                severity="medium",
-                message="`no cdp run` ayarlanmamış. Cihaz bilgisi CDP üzerinden yayınlanıyor.",
+                severity="info",
+                message=(
+                    "`no cdp run` tanımlı değil (düşük öncelik: CDP ile komşu/cihaz "
+                    "bilgisi görünür; yönlendirme protokolü kimlik doğrulama eksikliğiyle "
+                    "aynı risk sınıfında değildir)."
+                ),
                 context="global configuration",
             )
         ]
@@ -426,8 +444,11 @@ def _rule_clock_timezone_missing(data: ConfigData) -> list[Finding]:
         return [
             Finding(
                 rule_id="R024",
-                severity="medium",
-                message="`clock timezone` tanımlı değil. Log zaman dilimi belirsiz.",
+                severity="low",
+                message=(
+                    "`clock timezone` tanımlı değil (operasyonel/denetim önerisi). "
+                    "Log ve korelasyon için saat dilimi belirsiz kalır."
+                ),
                 context="global configuration",
             )
         ]
@@ -674,10 +695,10 @@ def _rule_tcp_keepalives_missing(data: ConfigData) -> list[Finding]:
         return [
             Finding(
                 rule_id="R038",
-                severity="low",
+                severity="info",
                 message=(
-                    "`service tcp-keepalives-in/out` etkin değil. Ölü oturumlar "
-                    "açık kalabilir."
+                    "`service tcp-keepalives-in/out` etkin değil (operasyonel öneri; "
+                    "güvenlik bulgusu değildir). Ölü TCP oturumları kaynak tüketebilir."
                 ),
                 context="global configuration",
             )
@@ -729,8 +750,11 @@ def _rule_archive_missing(data: ConfigData) -> list[Finding]:
         return [
             Finding(
                 rule_id="R042",
-                severity="low",
-                message="`archive` (config archive) tanımlı değil. Değişiklik izi tutulmuyor.",
+                severity="info",
+                message=(
+                    "`archive` (config archive) tanımlı değil (operasyonel/denetim önerisi; "
+                    "doğrudan güvenlik açığı değildir). Değişiklik izi tutulmuyor."
+                ),
                 context="global configuration",
             )
         ]
@@ -765,10 +789,11 @@ def _rule_access_port_cdp_disabled_missing(data: ConfigData) -> list[Finding]:
             findings.append(
                 Finding(
                     rule_id="R044",
-                    severity="low",
+                    severity="info",
                     message=(
-                        f"{intf.name} access portunda `no cdp enable` tanımlı değil. "
-                        "Kullanıcı portunda CDP gereksiz."
+                        f"{intf.name} access portunda `no cdp enable` tanımlı değil "
+                        "(operasyonel öneri; komşuluk bilgisi sızıntısını azaltır, "
+                        "tipik bir güvenlik bulgusu olarak sınıflandırılmaz)."
                     ),
                     context=f"interface {intf.name}",
                 )
@@ -882,10 +907,11 @@ def _rule_ospf_area_authentication_missing(data: ConfigData) -> list[Finding]:
             findings.append(
                 Finding(
                     rule_id="R050",
-                    severity="high",
+                    severity="critical",
                     message=(
                         f"OSPF process {process_id} area {area} için authentication "
-                        f"tanımlı değil."
+                        f"tanımlı değil; kimlik doğrulanmamış komşuluk ve link-state "
+                        f"bütünlüğü riski."
                     ),
                     context=f"router ospf {process_id}",
                 )
@@ -1134,6 +1160,203 @@ def _rule_urpf_missing(data: ConfigData) -> list[Finding]:
     return findings
 
 
+def _rule_ntp_authentication_missing(data: ConfigData) -> list[Finding]:
+    if not data.has_ntp_server:
+        return []
+    if data.ntp_authenticate_enabled or data.ntp_auth_keys_configured:
+        return []
+    return [
+        Finding(
+            rule_id="R069",
+            severity="medium",
+            message=(
+                "NTP sunucusu tanımlı ancak NTP kimlik doğrulaması "
+                "(`ntp authenticate`, `ntp authentication-key` veya `ntp server ... key`) yok."
+            ),
+            context="ntp server",
+        )
+    ]
+
+
+def _rule_logging_source_interface_missing(data: ConfigData) -> list[Finding]:
+    if not data.has_logging_host:
+        return []
+    if data.logging_source_interface_set:
+        return []
+    return [
+        Finding(
+            rule_id="R070",
+            severity="medium",
+            message=(
+                "Uzak syslog kullanılıyor ancak `logging source-interface` tanımlı değil. "
+                "Kaynak arayüz belirsiz kalır; güvenlik ve filtreleme zorlaşır."
+            ),
+            context="logging host",
+        )
+    ]
+
+
+def _rule_tacacs_source_interface_missing(data: ConfigData) -> list[Finding]:
+    if not data.aaa_new_model_enabled or not data.tacacs_server_configured:
+        return []
+    if data.ip_tacacs_source_interface_set:
+        return []
+    return [
+        Finding(
+            rule_id="R071",
+            severity="high",
+            message=(
+                "TACACS+ sunucusu tanımlı ancak `ip tacacs source-interface` yok. "
+                "Kaynak IP tutarsız olabilir; sunucu tarafı ACL ve denetim zayıflar."
+            ),
+            context="tacacs-server",
+        )
+    ]
+
+
+def _rule_radius_source_interface_missing(data: ConfigData) -> list[Finding]:
+    if not data.aaa_new_model_enabled or not data.radius_server_configured:
+        return []
+    if data.ip_radius_source_interface_set:
+        return []
+    return [
+        Finding(
+            rule_id="R072",
+            severity="high",
+            message=(
+                "RADIUS sunucusu tanımlı ancak `ip radius source-interface` yok. "
+                "Kaynak IP tutarsız olabilir; CoA ve güvenlik politikaları zorlaşır."
+            ),
+            context="radius-server",
+        )
+    ]
+
+
+def _rule_username_password_not_secret(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for raw in data.username_password_lines:
+        findings.append(
+            Finding(
+                rule_id="R073",
+                severity="high",
+                message=(
+                    "Yerel kullanıcı `password` ile tanımlı. Kurumsal ortamda "
+                    "`username ... secret` (hash) veya AAA ile merkezi kimlik doğrulama kullanın."
+                ),
+                context=raw,
+            )
+        )
+    return findings
+
+
+def _rule_service_timestamps_log_msec_missing(data: ConfigData) -> list[Finding]:
+    if not data.has_logging_host:
+        return []
+    if data.service_timestamps_log_msec:
+        return []
+    return [
+        Finding(
+            rule_id="R074",
+            severity="low",
+            message=(
+                "`service timestamps log datetime msec` tanımlı değil. "
+                "Milisaniye damgalı loglar olay korelasyonu ve adli analiz için önerilir."
+            ),
+            context="global configuration",
+        )
+    ]
+
+
+def _rule_ip_cef_disabled(data: ConfigData) -> list[Finding]:
+    if not data.ip_cef_disabled:
+        return []
+    return [
+        Finding(
+            rule_id="R075",
+            severity="medium",
+            message=(
+                "`no ip cef` etkin. CEF kapalı iken forwarding performansı ve bazı "
+                "güvenlik özellikleri (uRPF vb.) beklenenden farklı davranabilir; üretimde "
+                "sadece troubleshooting amaçlı olmalı."
+            ),
+            context="no ip cef",
+        )
+    ]
+
+
+def _rule_snmp_contact_missing(data: ConfigData) -> list[Finding]:
+    if not data.snmp_communities and not data.snmpv3_configured:
+        return []
+    if data.snmp_contact_set:
+        return []
+    return [
+        Finding(
+            rule_id="R076",
+            severity="low",
+            message=(
+                "`snmp-server contact` tanımlı değil. NMS ve operasyon ekipleri için "
+                "acil durum iletişim bilgisi önerilir."
+            ),
+            context="snmp-server",
+        )
+    ]
+
+
+def _rule_snmp_location_missing(data: ConfigData) -> list[Finding]:
+    if not data.snmp_communities and not data.snmpv3_configured:
+        return []
+    if data.snmp_location_set:
+        return []
+    return [
+        Finding(
+            rule_id="R077",
+            severity="low",
+            message=(
+                "`snmp-server location` tanımlı değil. Fiziksel konum bilgisi "
+                "envanter ve olay müdahalesi için önerilir."
+            ),
+            context="snmp-server",
+        )
+    ]
+
+
+def _rule_crypto_pki_missing_domain_name(data: ConfigData) -> list[Finding]:
+    if not data.crypto_pki_trustpoint_seen:
+        return []
+    if data.ip_domain_name_set:
+        return []
+    return [
+        Finding(
+            rule_id="R078",
+            severity="medium",
+            message=(
+                "PKI trustpoint tanımlı ancak `ip domain-name` yok. "
+                "Sertifika enrollment ve CRL/SCEP için FQDN genelde gereklidir."
+            ),
+            context="crypto pki trustpoint",
+        )
+    ]
+
+
+def _rule_archive_log_config_missing(data: ConfigData) -> list[Finding]:
+    if not data.archive_enabled:
+        return []
+    if data.archive_log_config_enabled:
+        return []
+    return [
+        Finding(
+            rule_id="R079",
+            severity="info",
+            message=(
+                "`archive` etkin ancak `log config` (konfigürasyon değişiklik günlüğü) "
+                "tanımlı değil (operasyonel/denetim önerisi; güvenlik bulgusu değildir). "
+                "Denetim ve geri alma için `archive` altında `log config` önerilir."
+            ),
+            context="archive",
+        )
+    ]
+
+
 def run_rules(data: ConfigData) -> list[Finding]:
     findings: list[Finding] = []
     for rule in (
@@ -1198,6 +1421,17 @@ def run_rules(data: ConfigData) -> list[Finding]:
         _rule_bgp_log_neighbor_changes_missing,
         _rule_bgp_neighbor_description_missing,
         _rule_ibgp_update_source_missing,
+        _rule_ntp_authentication_missing,
+        _rule_logging_source_interface_missing,
+        _rule_tacacs_source_interface_missing,
+        _rule_radius_source_interface_missing,
+        _rule_username_password_not_secret,
+        _rule_service_timestamps_log_msec_missing,
+        _rule_ip_cef_disabled,
+        _rule_snmp_contact_missing,
+        _rule_snmp_location_missing,
+        _rule_crypto_pki_missing_domain_name,
+        _rule_archive_log_config_missing,
     ):
         findings.extend(rule(data))
     for finding in findings:

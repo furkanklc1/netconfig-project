@@ -53,6 +53,9 @@
         --low-bg: #dbeafe;
         --low-border: #bfdbfe;
         --low-accent: #2563eb;
+        --info-bg: #f1f5f9;
+        --info-border: #cbd5e1;
+        --info-accent: #64748b;
 
         --severity-text: #475569;
         --severity-pill-critical-bg: #fdf2f8;
@@ -63,6 +66,8 @@
         --severity-pill-medium-text: #9a3412;
         --severity-pill-low-bg: #eff6ff;
         --severity-pill-low-text: #1e3a8a;
+        --severity-pill-info-bg: #f1f5f9;
+        --severity-pill-info-text: #475569;
 
         --count-critical-bg: #fce7f3;
         --count-critical-text: #9f1239;
@@ -76,6 +81,9 @@
         --count-low-bg: #dbeafe;
         --count-low-text: #1e3a8a;
         --count-low-border: #bfdbfe;
+        --count-info-bg: #f1f5f9;
+        --count-info-text: #475569;
+        --count-info-border: #cbd5e1;
 
         --code-bg: #f1f5f9;
         --code-text: #0f172a;
@@ -121,6 +129,11 @@
 
         --section-icon-bg: linear-gradient(135deg, #eef2ff, #ede9fe);
         --section-icon-text: var(--indigo);
+
+        --finding-meta: #475569;
+        --finding-code-bg: rgba(255, 255, 255, 0.72);
+        --finding-code-text: #0f172a;
+        --finding-code-border: rgba(15, 23, 42, 0.1);
       }
 
       [data-theme="dark"] {
@@ -154,6 +167,9 @@
         --low-bg: rgba(37, 99, 235, 0.20);
         --low-border: rgba(96, 165, 250, 0.60);
         --low-accent: #60a5fa;
+        --info-bg: rgba(148, 163, 184, 0.18);
+        --info-border: rgba(148, 163, 184, 0.45);
+        --info-accent: #94a3b8;
 
         --severity-text: #cbd5e1;
         --severity-pill-critical-bg: rgba(159, 18, 57, 0.25);
@@ -164,6 +180,8 @@
         --severity-pill-medium-text: #fdba74;
         --severity-pill-low-bg: rgba(37, 99, 235, 0.2);
         --severity-pill-low-text: #93c5fd;
+        --severity-pill-info-bg: rgba(148, 163, 184, 0.22);
+        --severity-pill-info-text: #cbd5e1;
 
         --count-critical-bg: rgba(159, 18, 57, 0.25);
         --count-critical-text: #fbcfe8;
@@ -177,6 +195,9 @@
         --count-low-bg: rgba(37, 99, 235, 0.22);
         --count-low-text: #93c5fd;
         --count-low-border: rgba(96, 165, 250, 0.45);
+        --count-info-bg: rgba(148, 163, 184, 0.2);
+        --count-info-text: #cbd5e1;
+        --count-info-border: rgba(148, 163, 184, 0.4);
 
         --code-bg: rgba(15, 23, 42, 0.7);
         --code-text: #e2e8f0;
@@ -222,6 +243,11 @@
 
         --section-icon-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(192, 132, 252, 0.18));
         --section-icon-text: #c7d2fe;
+
+        --finding-meta: #cbd5e1;
+        --finding-code-bg: rgba(15, 23, 42, 0.65);
+        --finding-code-text: #e2e8f0;
+        --finding-code-border: rgba(148, 163, 184, 0.28);
       }
 
       * { box-sizing: border-box; }
@@ -429,7 +455,76 @@
       .list-group-item.finding-item.high { background-color: var(--high-bg) !important; border-color: var(--high-border); border-left-color: var(--high-accent); }
       .list-group-item.finding-item.medium { background-color: var(--medium-bg) !important; border-color: var(--medium-border); border-left-color: var(--medium-accent); }
       .list-group-item.finding-item.low { background-color: var(--low-bg) !important; border-color: var(--low-border); border-left-color: var(--low-accent); }
+      .list-group-item.finding-item.info { background-color: var(--info-bg) !important; border-color: var(--info-border); border-left-color: var(--info-accent); }
       .finding-item + .finding-item { margin-top: 0.85rem; }
+      .finding-item .finding-message {
+        flex: 1 1 12rem;
+        min-width: 0;
+        word-break: break-word;
+        color: var(--ink);
+        line-height: 1.45;
+      }
+      .finding-item .finding-actions {
+        flex: 0 0 auto;
+        align-self: flex-start;
+      }
+      .finding-item .finding-meta {
+        color: var(--finding-meta);
+        font-size: 0.82rem;
+        margin-top: 0.55rem;
+        line-height: 1.5;
+      }
+      .finding-item .finding-meta .category-pill {
+        vertical-align: middle;
+        margin-left: 0.35rem;
+      }
+      .finding-item .text-muted {
+        color: var(--finding-meta) !important;
+      }
+      .finding-context-code {
+        white-space: pre-wrap;
+        word-break: break-word;
+        display: block;
+        margin-top: 0.45rem;
+        padding: 0.5rem 0.65rem;
+        background: var(--finding-code-bg);
+        color: var(--finding-code-text);
+        border: 1px solid var(--finding-code-border);
+        font-size: 0.8rem;
+        line-height: 1.5;
+        border-radius: 0.45rem;
+      }
+      .diff-findings-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+      }
+      .diff-findings-list > .list-group-item {
+        border: 0;
+        padding: 0;
+        background: transparent !important;
+      }
+      .diff-results-panel .h6 {
+        color: var(--ink);
+        font-weight: 600;
+        margin-bottom: 0.65rem;
+      }
+      .diff-findings-list .finding-item {
+        opacity: 1;
+        transform: none;
+        animation: none;
+      }
+      .finding-item .severity-pill {
+        flex-shrink: 0;
+      }
+      .finding-item code.finding-context-code {
+        background: var(--finding-code-bg);
+        color: var(--finding-code-text);
+        border-color: var(--finding-code-border);
+      }
       [data-theme="dark"] .finding-item:hover {
         box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
       }
@@ -447,11 +542,13 @@
       .severity-high { background: #dc2626; animation: pulse-high 2.6s infinite; }
       .severity-medium { background: #d97706; animation: pulse-medium 2.8s infinite; }
       .severity-low { background: #2563eb; animation: pulse-low 3.0s infinite; }
+      .severity-info { background: #64748b; }
       .severity-text { font-size: 0.78rem; color: var(--severity-text); text-transform: capitalize; }
       .severity-pill.critical { background: var(--severity-pill-critical-bg); color: var(--severity-pill-critical-text); }
       .severity-pill.high { background: var(--severity-pill-high-bg); color: var(--severity-pill-high-text); }
       .severity-pill.medium { background: var(--severity-pill-medium-bg); color: var(--severity-pill-medium-text); }
       .severity-pill.low { background: var(--severity-pill-low-bg); color: var(--severity-pill-low-text); }
+      .severity-pill.info { background: var(--severity-pill-info-bg); color: var(--severity-pill-info-text); }
 
       .severity-count-pill {
         border-radius: 999px;
@@ -465,6 +562,7 @@
       .severity-count-pill.high { background: var(--count-high-bg); color: var(--count-high-text); border: 1px solid var(--count-high-border); }
       .severity-count-pill.medium { background: var(--count-medium-bg); color: var(--count-medium-text); border: 1px solid var(--count-medium-border); }
       .severity-count-pill.low { background: var(--count-low-bg); color: var(--count-low-text); border: 1px solid var(--count-low-border); }
+      .severity-count-pill.info { background: var(--count-info-bg); color: var(--count-info-text); border: 1px solid var(--count-info-border); }
 
       @keyframes pulse-critical {
         0% { box-shadow: 0 0 0 0 rgba(159, 18, 57, 0.5); opacity: 1; }
@@ -567,29 +665,12 @@
       [data-theme="dark"] .device-badge.os { background: rgba(34, 197, 94, 0.18); color: #86efac; border-color: rgba(110, 231, 183, 0.35); }
       [data-theme="dark"] .device-badge.image { background: rgba(217, 119, 6, 0.18); color: #fcd34d; border-color: rgba(252, 211, 77, 0.35); }
 
-      /* ---------- FILTER ---------- */
-      .category-filter { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0 0.25rem; }
-      .category-filter button {
-        border: 1px solid var(--filter-btn-border);
-        background: var(--filter-btn-bg);
-        color: var(--filter-btn-text);
-        border-radius: 999px;
-        padding: 0.34rem 0.95rem;
-        font-size: 0.82rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.18s ease;
-      }
-      .category-filter button:hover {
-        background: var(--filter-btn-hover-bg);
-        border-color: var(--filter-btn-hover-border);
-        color: var(--filter-btn-hover-text);
-      }
-      .category-filter button.active {
-        background: linear-gradient(135deg, var(--indigo), var(--indigo-2));
-        color: #fff !important;
-        border-color: #4338ca;
-        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+      /* ---------- FILTER CHIPS (same btn structure) ---------- */
+      .category-filter {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        padding: 0 0.25rem;
       }
 
       .category-pill {
@@ -635,56 +716,220 @@
       .alert.alert-secondary { background: var(--alert-secondary-bg) !important; border-color: var(--alert-secondary-border) !important; color: var(--alert-secondary-text) !important; }
       .alert strong { color: inherit; }
 
-      /* ---------- BUTTONS ---------- */
+      /* ---------- BUTTONS (unified structure) ---------- */
       .btn {
         border-radius: 0.7rem;
         font-weight: 600;
         font-size: 0.92rem;
-        padding: 0.55rem 1.2rem;
+        line-height: 1.2;
+        padding: 0.55rem 1.15rem;
         display: inline-flex;
         align-items: center;
-        gap: 0.45rem;
+        justify-content: center;
+        gap: 0.5rem;
+        border: 1.5px solid transparent;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
         transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
       }
-      .btn .emoji { font-size: 16px; line-height: 1; }
-      .btn:active { transform: translateY(0) scale(0.98); }
-
-      .btn-primary {
-        background: linear-gradient(135deg, var(--indigo) 0%, var(--indigo-2) 100%);
-        border: 0;
-        color: #fff;
-        box-shadow: 0 6px 18px rgba(79, 70, 229, 0.28);
+      .btn .btn-icon,
+      .btn .emoji {
+        font-size: 1.05rem;
+        line-height: 1;
+        flex-shrink: 0;
       }
-      .btn-primary:hover, .btn-primary:focus {
+      .btn .btn-label { line-height: 1.2; }
+      .btn:hover { transform: translateY(-1px); text-decoration: none; }
+      .btn:active { transform: translateY(0) scale(0.98); }
+      .btn:focus-visible {
+        outline: 2px solid var(--indigo-2);
+        outline-offset: 2px;
+      }
+
+      /* Tek dosya analizi — indigo */
+      .btn--analyze {
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+        border-color: #4338ca;
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(79, 70, 229, 0.3);
+      }
+      .btn--analyze:hover,
+      .btn--analyze:focus {
         background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
         color: #fff;
-        transform: translateY(-1px);
-        box-shadow: 0 12px 28px rgba(79, 70, 229, 0.42);
+        box-shadow: 0 10px 26px rgba(79, 70, 229, 0.42);
       }
 
-      .btn-outline-primary {
-        background: transparent;
-        border: 1.5px solid var(--indigo);
-        color: var(--indigo);
-      }
-      .btn-outline-primary:hover, .btn-outline-primary:focus {
-        background: linear-gradient(135deg, var(--indigo), var(--indigo-2));
-        border-color: transparent;
-        color: #fff;
-        transform: translateY(-1px);
-        box-shadow: 0 10px 22px rgba(79, 70, 229, 0.35);
-      }
-
-      .btn-outline-secondary {
-        background: transparent;
-        border: 1.5px solid var(--filter-btn-border);
+      /* HTML rapor — slate */
+      .btn--html {
+        background: var(--filter-btn-bg);
+        border-color: var(--filter-btn-border);
         color: var(--ink);
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
       }
-      .btn-outline-secondary:hover, .btn-outline-secondary:focus {
+      .btn--html:hover,
+      .btn--html:focus {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        color: #0f172a;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
+      }
+      [data-theme="dark"] .btn--html {
+        background: rgba(30, 41, 59, 0.65);
+        border-color: rgba(148, 163, 184, 0.35);
+        color: #e2e8f0;
+      }
+      [data-theme="dark"] .btn--html:hover,
+      [data-theme="dark"] .btn--html:focus {
+        background: rgba(51, 65, 85, 0.85);
+        border-color: rgba(148, 163, 184, 0.5);
+        color: #f8fafc;
+      }
+
+      /* PDF rapor — rose */
+      .btn--pdf {
+        background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
+        border-color: #be123c;
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(225, 29, 72, 0.28);
+      }
+      .btn--pdf:hover,
+      .btn--pdf:focus {
+        background: linear-gradient(135deg, #be123c 0%, #e11d48 100%);
+        color: #fff;
+        box-shadow: 0 10px 26px rgba(225, 29, 72, 0.38);
+      }
+
+      /* Kategori filtreleri — chip */
+      .btn--chip {
+        border-radius: 999px;
+        padding: 0.38rem 0.95rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        background: var(--filter-btn-bg);
+        border-color: var(--filter-btn-border);
+        color: var(--filter-btn-text);
+        box-shadow: none;
+      }
+      .btn--chip:hover {
         background: var(--filter-btn-hover-bg);
         border-color: var(--filter-btn-hover-border);
         color: var(--filter-btn-hover-text);
-        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      }
+      .btn--chip.active {
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.15);
+      }
+      .btn--chip.btn--chip-all.active {
+        background: linear-gradient(135deg, #475569, #64748b);
+        border-color: #334155;
+      }
+      .btn--chip.btn--chip-security.active {
+        background: linear-gradient(135deg, #dc2626, #ef4444);
+        border-color: #b91c1c;
+        box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35);
+      }
+      .btn--chip.btn--chip-routing.active {
+        background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+        border-color: #6d28d9;
+        box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
+      }
+      .btn--chip.btn--chip-l2.active {
+        background: linear-gradient(135deg, #0d9488, #14b8a6);
+        border-color: #0f766e;
+        box-shadow: 0 6px 16px rgba(13, 148, 136, 0.35);
+      }
+      .btn--chip.btn--chip-compliance.active {
+        background: linear-gradient(135deg, #d97706, #f59e0b);
+        border-color: #b45309;
+        box-shadow: 0 6px 16px rgba(217, 119, 6, 0.35);
+      }
+      .btn--chip.btn--chip-operations.active {
+        background: linear-gradient(135deg, #0284c7, #0ea5e9);
+        border-color: #0369a1;
+        box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+      }
+
+      .form-actions {
+        margin-top: 0.85rem;
+        display: flex;
+        justify-content: center;
+      }
+      .download-bar { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+      .upload-input-group { align-items: stretch; }
+      .upload-input-group .file-picker-field { flex: 1 1 auto; min-width: 0; }
+      .upload-input-group .btn {
+        border-radius: 0 0.7rem 0.7rem 0;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        align-self: stretch;
+      }
+
+      /* ---------- FILE PICKER ---------- */
+      .file-picker-field { position: relative; width: 100%; }
+      .file-picker-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      .file-picker {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        width: 100%;
+        min-height: 2.75rem;
+        padding: 0.5rem 0.75rem;
+        margin: 0;
+        border: 1px solid var(--form-input-border);
+        border-radius: 0.7rem;
+        background: var(--form-input-bg);
+        color: var(--ink);
+        cursor: pointer;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .file-picker:hover {
+        border-color: #a5b4fc;
+      }
+      .file-picker-field:focus-within .file-picker {
+        border-color: #a5b4fc;
+        box-shadow: 0 0 0 4px rgba(165, 180, 252, 0.25);
+      }
+      .file-picker-action {
+        flex-shrink: 0;
+        padding: 0.38rem 0.85rem;
+        border-radius: 0.5rem;
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 0.82rem;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      [data-theme="dark"] .file-picker-action {
+        background: rgba(79, 70, 229, 0.35);
+        color: #e0e7ff;
+      }
+      .file-picker-name {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.88rem;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+      .file-picker-name.has-file {
+        color: var(--ink);
+        font-weight: 500;
       }
 
       /* ---------- FORMS ---------- */
@@ -728,6 +973,179 @@
         color: var(--ink) !important;
         border: 1px solid var(--filter-btn-border) !important;
       }
+
+      /* ---------- MOBILE / RESPONSIVE ---------- */
+      @media (max-width: 991.98px) {
+        .findings-head .d-flex.justify-content-between {
+          flex-direction: column;
+          align-items: flex-start !important;
+        }
+        .findings-head .d-flex.flex-wrap.gap-2 {
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 767.98px) {
+        html, body { overflow-x: hidden; }
+
+        .container {
+          padding-left: 0.85rem;
+          padding-right: 0.85rem;
+        }
+
+        .hero {
+          padding: 3.25rem 1rem 1.65rem 1rem;
+          border-radius: 1rem;
+          margin-bottom: 1.25rem;
+        }
+        .hero-title {
+          font-size: clamp(1.85rem, 8vw, 2.5rem);
+          margin-top: 0.85rem;
+        }
+        .hero-tagline {
+          font-size: 0.92rem;
+          line-height: 1.5;
+        }
+        .hero-eyebrow {
+          font-size: 0.68rem;
+          padding: 0.35rem 0.7rem;
+          max-width: 100%;
+          line-height: 1.35;
+        }
+        .hero-eyebrow span:last-child {
+          display: inline;
+        }
+        .hero-meta { margin-top: 1.1rem; gap: 0.4rem; }
+        .hero-pill { font-size: 0.75rem; padding: 0.32rem 0.65rem; }
+        .theme-toggle { top: 0.75rem; right: 0.75rem; }
+
+        .soft-card { border-radius: 0.95rem; }
+        .card-body.p-4,
+        .findings-head,
+        .findings-wrap .list-group {
+          padding-left: 1rem !important;
+          padding-right: 1rem !important;
+        }
+        .findings-wrap .list-group {
+          padding-top: 0.75rem !important;
+          padding-bottom: 0.75rem !important;
+        }
+
+        .section-head h2 { font-size: 0.98rem; }
+        .section-icon {
+          width: 36px;
+          height: 36px;
+          font-size: 18px;
+        }
+
+        .upload-input-group {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0.55rem;
+        }
+        .upload-input-group .file-picker-field {
+          width: 100%;
+        }
+        .upload-input-group .file-picker {
+          border-radius: 0.7rem !important;
+        }
+        .upload-input-group .btn {
+          width: 100%;
+          border-radius: 0.7rem !important;
+          justify-content: center;
+          min-height: 2.75rem;
+        }
+        .file-picker-name { font-size: 16px; }
+
+        .form-actions {
+          width: 100%;
+        }
+        .form-actions .btn {
+          width: 100%;
+          max-width: none;
+          min-height: 2.75rem;
+        }
+
+        .download-bar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .download-bar .btn {
+          width: 100%;
+          justify-content: center;
+          min-height: 2.75rem;
+        }
+
+        .category-filter {
+          justify-content: flex-start;
+          gap: 0.35rem;
+        }
+        .btn--chip {
+          padding: 0.42rem 0.8rem;
+          font-size: 0.78rem;
+        }
+
+        .finding-item {
+          padding: 0.85rem 0.95rem;
+        }
+        .finding-item > .d-flex.justify-content-between {
+          flex-direction: column;
+          align-items: flex-start !important;
+          gap: 0.55rem !important;
+        }
+        .finding-item .finding-actions {
+          width: 100%;
+          flex-wrap: wrap;
+        }
+
+        .active-file-indicator {
+          max-width: 100%;
+          font-size: 0.8rem;
+          line-height: 1.4;
+          border-radius: 0.75rem;
+          flex-wrap: wrap;
+        }
+        .active-file-indicator strong {
+          word-break: break-all;
+        }
+
+        .device-badge {
+          margin-bottom: 0.25rem;
+          max-width: 100%;
+          white-space: normal;
+          text-align: left;
+        }
+
+        .diff-line {
+          font-size: 0.78rem;
+          padding: 0.5rem 0.55rem;
+        }
+        .diff-children {
+          margin-left: 0.5rem;
+          padding-left: 0.85rem;
+        }
+
+        .diff-results-panel .h6 {
+          font-size: 0.9rem;
+        }
+
+        .alert { font-size: 0.9rem; }
+        .mismatch-warning { font-size: 0.84rem; }
+      }
+
+      @media (max-width: 575.98px) {
+        .hero-eyebrow span:last-child {
+          font-size: 0.65rem;
+        }
+        .severity-count-pill {
+          font-size: 0.72rem;
+          padding: 0.25rem 0.55rem;
+        }
+        .finding-context-code {
+          font-size: 0.75rem;
+          padding: 0.4rem 0.5rem;
+        }
+      }
     </style>
   </head>
   <body>
@@ -748,7 +1166,7 @@
         <div class="hero-content">
           <span class="hero-eyebrow">
             <span class="hero-status-dot"></span>
-            <span>Cisco IOS Auditor · 68 kural aktif · Secret scanner devrede</span>
+            <span>Cisco IOS Auditor · 79 kural aktif · Secret scanner devrede</span>
           </span>
           <h1 class="hero-title">NetConfig <span class="hero-accent">AI</span></h1>
           <p class="hero-tagline">
@@ -759,7 +1177,7 @@
             <span class="hero-pill">Secret scanner</span>
             <span class="hero-pill">Diff analizi</span>
             <span class="hero-pill">PDF / HTML rapor</span>
-            <span class="hero-pill">6 vendor algılayıcı</span>
+            <span class="hero-pill">Çoklu vendor imzası</span>
           </div>
         </div>
       </section>
@@ -774,15 +1192,28 @@
           <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="analysis_type" value="single">
             <label for="config_file" class="form-label text-muted">Desteklenen formatlar: .txt, .cfg</label>
-            <div class="input-group">
-              <input
-                id="config_file"
-                name="config_file"
-                type="file"
-                accept=".txt,.cfg,text/plain"
-                class="form-control"
-              >
-              <button class="btn btn-primary" type="submit">Analiz Et</button>
+            <div class="input-group upload-input-group">
+              <div class="file-picker-field">
+                <input
+                  id="config_file"
+                  name="config_file"
+                  type="file"
+                  accept=".txt,.cfg,text/plain"
+                  class="file-picker-input"
+                >
+                <label for="config_file" class="file-picker">
+                  <span class="file-picker-action">Dosya seç</span>
+                  <span
+                    class="file-picker-name"
+                    data-filename-for="config_file"
+                    data-placeholder="Henüz dosya seçilmedi"
+                  >Henüz dosya seçilmedi</span>
+                </label>
+              </div>
+              <button class="btn btn--analyze" type="submit">
+                <span class="btn-icon" aria-hidden="true">🔍</span>
+                <span class="btn-label">Analiz Et</span>
+              </button>
             </div>
             {% if uploaded_name %}
             <div class="active-file-indicator">
@@ -807,14 +1238,51 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <label for="old_config_file" class="form-label text-muted">Eski config (.txt/.cfg)</label>
-                <input id="old_config_file" name="old_config_file" type="file" accept=".txt,.cfg,text/plain" class="form-control">
+                <div class="file-picker-field">
+                  <input
+                    id="old_config_file"
+                    name="old_config_file"
+                    type="file"
+                    accept=".txt,.cfg,text/plain"
+                    class="file-picker-input"
+                  >
+                  <label for="old_config_file" class="file-picker">
+                    <span class="file-picker-action">Dosya seç</span>
+                    <span
+                      class="file-picker-name"
+                      data-filename-for="old_config_file"
+                      data-placeholder="Eski config seçilmedi"
+                    >Eski config seçilmedi</span>
+                  </label>
+                </div>
               </div>
               <div class="col-md-6">
                 <label for="new_config_file" class="form-label text-muted">Yeni config (.txt/.cfg)</label>
-                <input id="new_config_file" name="new_config_file" type="file" accept=".txt,.cfg,text/plain" class="form-control">
+                <div class="file-picker-field">
+                  <input
+                    id="new_config_file"
+                    name="new_config_file"
+                    type="file"
+                    accept=".txt,.cfg,text/plain"
+                    class="file-picker-input"
+                  >
+                  <label for="new_config_file" class="file-picker">
+                    <span class="file-picker-action">Dosya seç</span>
+                    <span
+                      class="file-picker-name"
+                      data-filename-for="new_config_file"
+                      data-placeholder="Yeni config seçilmedi"
+                    >Yeni config seçilmedi</span>
+                  </label>
+                </div>
               </div>
             </div>
-            <button class="btn btn-outline-primary mt-3" type="submit">Diff Analizi Yap</button>
+            <div class="form-actions">
+              <button class="btn btn--analyze" type="submit">
+                <span class="btn-icon" aria-hidden="true">🔀</span>
+                <span class="btn-label">Diff Analizi Yap</span>
+              </button>
+            </div>
             {% if old_uploaded_name and new_uploaded_name %}
             <div class="active-file-indicator">
               <span class="dot"></span>
@@ -846,6 +1314,12 @@
           {% if device_info.boot_image %}
           <span class="device-badge image">Image: {{ device_info.boot_image }}</span>
           {% endif %}
+          {% if device_info.device_type_label %}
+          <span class="device-badge platform">Cihaz: {{ device_info.device_type_label }}</span>
+          {% if device_info.device_type_note %}
+          <span class="device-badge os">{{ device_info.device_type_note }}</span>
+          {% endif %}
+          {% endif %}
         </div>
         {% endif %}
       </div>
@@ -871,6 +1345,9 @@
               {% if diff_result.old_device_info.boot_image %}
               <span class="device-badge image">Image: {{ diff_result.old_device_info.boot_image }}</span>
               {% endif %}
+              {% if diff_result.old_device_info.device_type_label %}
+              <span class="device-badge platform">Cihaz: {{ diff_result.old_device_info.device_type_label }}</span>
+              {% endif %}
             </div>
             {% endif %}
           </div>
@@ -890,6 +1367,9 @@
               {% endif %}
               {% if diff_result.new_device_info.boot_image %}
               <span class="device-badge image">Image: {{ diff_result.new_device_info.boot_image }}</span>
+              {% endif %}
+              {% if diff_result.new_device_info.device_type_label %}
+              <span class="device-badge platform">Cihaz: {{ diff_result.new_device_info.device_type_label }}</span>
               {% endif %}
             </div>
             {% endif %}
@@ -926,35 +1406,56 @@
               {% if severity_counts and severity_counts.low %}
               <span class="severity-count-pill low">{{ severity_counts.low }} low</span>
               {% endif %}
+              {% if severity_counts and severity_counts.info %}
+              <span class="severity-count-pill info">{{ severity_counts.info }} info</span>
+              {% endif %}
               <span class="badge text-bg-light border rounded-pill px-3 py-2">{{ report|length }} bulgu</span>
             </div>
           </div>
 
           {% if download_token %}
-          <div class="download-bar mt-3 d-flex flex-wrap gap-2">
-            <a class="btn btn-outline-secondary" href="{{ url_for('download_html', token=download_token) }}" target="_blank" rel="noopener">
-              <span class="emoji">📄</span> HTML Rapor
+          <div class="download-bar mt-3">
+            <a class="btn btn--html" href="{{ url_for('download_html', token=download_token) }}" target="_blank" rel="noopener">
+              <span class="btn-icon" aria-hidden="true">📄</span>
+              <span class="btn-label">HTML Rapor</span>
             </a>
-            <a class="btn btn-primary" href="{{ url_for('download_pdf', token=download_token) }}" target="_blank" rel="noopener">
-              <span class="emoji">📑</span> PDF Rapor
+            <a class="btn btn--pdf" href="{{ url_for('download_pdf', token=download_token) }}" target="_blank" rel="noopener">
+              <span class="btn-icon" aria-hidden="true">📑</span>
+              <span class="btn-label">PDF Rapor</span>
             </a>
           </div>
           {% endif %}
 
           <div class="category-filter mt-3">
-            <button type="button" class="active" data-category="all">Tümü</button>
-            <button type="button" data-category="security">Security</button>
-            <button type="button" data-category="routing">Routing</button>
-            <button type="button" data-category="l2">L2 / Switching</button>
-            <button type="button" data-category="compliance">Compliance</button>
-            <button type="button" data-category="operations">Operations</button>
+            <button type="button" class="btn btn--chip btn--chip-all active" data-category="all">
+              <span class="btn-label">Tümü</span>
+            </button>
+            <button type="button" class="btn btn--chip btn--chip-security" data-category="security">
+              <span class="btn-label">Security</span>
+            </button>
+            <button type="button" class="btn btn--chip btn--chip-routing" data-category="routing">
+              <span class="btn-label">Routing</span>
+            </button>
+            <button type="button" class="btn btn--chip btn--chip-l2" data-category="l2">
+              <span class="btn-label">L2 / Switching</span>
+            </button>
+            <button type="button" class="btn btn--chip btn--chip-compliance" data-category="compliance">
+              <span class="btn-label">Compliance</span>
+            </button>
+            <button type="button" class="btn btn--chip btn--chip-operations" data-category="operations">
+              <span class="btn-label">Operations</span>
+            </button>
           </div>
         </div>
         <ul class="list-group list-group-flush px-3 py-3 bg-transparent" id="findings-list">
           {% for item in report %}
-          <li class="list-group-item finding-item {{ item.severity }} bg-transparent" data-category="{{ item.category }}" style="--i: {{ loop.index0 }};">
-            <div class="d-flex justify-content-between align-items-start gap-3">
-              <strong class="fw-semibold">{{ item.message }}</strong>
+          <li class="list-group-item finding-item {{ item.severity }}" data-category="{{ item.category }}" style="--i: {{ loop.index0 }};">
+            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+              <strong class="finding-message fw-semibold">{{ item.message }}</strong>
+              <div class="finding-actions d-flex align-items-center gap-2">
+                {% if item.occurrence_count is defined and item.occurrence_count > 1 %}
+                <span class="badge rounded-pill text-bg-secondary border">{{ item.occurrence_count }} konum</span>
+                {% endif %}
               <div class="severity-pill {{ item.severity }}">
                 {% if item.severity == "critical" %}
                 <span class="severity-dot severity-critical"></span>
@@ -962,17 +1463,22 @@
                 <span class="severity-dot severity-high"></span>
                 {% elif item.severity == "medium" %}
                 <span class="severity-dot severity-medium"></span>
+                {% elif item.severity == "low" %}
+                <span class="severity-dot severity-low"></span>
+                {% elif item.severity == "info" %}
+                <span class="severity-dot severity-info"></span>
                 {% else %}
                 <span class="severity-dot severity-low"></span>
                 {% endif %}
                 <span class="severity-text">{{ item.severity }}</span>
               </div>
+              </div>
             </div>
-            <div class="small text-muted mt-2">
+            <div class="finding-meta">
               {{ item.rule_id }}
               <span class="category-pill {{ item.category }}">{{ item.category }}</span>
             </div>
-            <div class="small mt-2"><code>{{ item.context }}</code></div>
+            <code class="finding-context-code">{{ item.context }}</code>
             <div class="mt-2 recommendation"><em>💡 Öneri:</em> {{ item.recommendation }}</div>
           </li>
           {% endfor %}
@@ -993,8 +1499,8 @@
             <span class="badge text-bg-light border rounded-pill px-3 py-2">{{ diff_result.changed_line_count }} değişen satır</span>
           </div>
         </div>
-        <div class="card-body px-4 py-3">
-          <h4 class="h6 mb-2">Değiştirilen Satırlar (Eski → Yeni)</h4>
+        <div class="card-body px-4 py-3 diff-results-panel">
+          <h4 class="h6">Değiştirilen Satırlar (Eski → Yeni)</h4>
           {% if diff_result.modified_pairs %}
           <div class="d-grid gap-2 mb-4">
             {% for pair in diff_result.modified_pairs %}
@@ -1050,11 +1556,15 @@
 
           <h4 class="h6 mb-2">Yeni Oluşan Riskler</h4>
           {% if diff_result.new_findings %}
-          <ul class="list-group list-group-flush mb-4">
+          <ul class="list-group diff-findings-list mb-4">
             {% for item in diff_result.new_findings %}
-            <li class="list-group-item finding-item {{ item.severity }} bg-transparent" style="--i: {{ loop.index0 }};">
-              <div class="d-flex justify-content-between align-items-start gap-3">
-                <div class="fw-semibold">{{ item.message }}</div>
+            <li class="list-group-item finding-item {{ item.severity }}" style="--i: {{ loop.index0 }};">
+              <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                <div class="finding-message fw-semibold">{{ item.message }}</div>
+                <div class="finding-actions d-flex align-items-center gap-2">
+                  {% if item.occurrence_count is defined and item.occurrence_count > 1 %}
+                  <span class="badge rounded-pill text-bg-secondary border">{{ item.occurrence_count }} konum</span>
+                  {% endif %}
                 <div class="severity-pill {{ item.severity }}">
                   {% if item.severity == "critical" %}
                   <span class="severity-dot severity-critical"></span>
@@ -1062,17 +1572,22 @@
                   <span class="severity-dot severity-high"></span>
                   {% elif item.severity == "medium" %}
                   <span class="severity-dot severity-medium"></span>
+                  {% elif item.severity == "low" %}
+                  <span class="severity-dot severity-low"></span>
+                  {% elif item.severity == "info" %}
+                  <span class="severity-dot severity-info"></span>
                   {% else %}
                   <span class="severity-dot severity-low"></span>
                   {% endif %}
                   <span class="severity-text">{{ item.severity }}</span>
                 </div>
+                </div>
               </div>
-              <div class="small text-muted mt-1">
+              <div class="finding-meta">
                 {{ item.rule_id }}
                 <span class="category-pill {{ item.category }}">{{ item.category }}</span>
-                - <code>{{ item.context }}</code>
               </div>
+              <code class="finding-context-code">{{ item.context }}</code>
             </li>
             {% endfor %}
           </ul>
@@ -1082,11 +1597,15 @@
 
           <h4 class="h6 mb-2">Çözülen Riskler</h4>
           {% if diff_result.resolved_findings %}
-          <ul class="list-group list-group-flush">
+          <ul class="list-group diff-findings-list">
             {% for item in diff_result.resolved_findings %}
-            <li class="list-group-item finding-item {{ item.severity }} bg-transparent" style="--i: {{ loop.index0 }};">
-              <div class="d-flex justify-content-between align-items-start gap-3">
-                <div class="fw-semibold">{{ item.message }}</div>
+            <li class="list-group-item finding-item {{ item.severity }}" style="--i: {{ loop.index0 }};">
+              <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                <div class="finding-message fw-semibold">{{ item.message }}</div>
+                <div class="finding-actions d-flex align-items-center gap-2">
+                  {% if item.occurrence_count is defined and item.occurrence_count > 1 %}
+                  <span class="badge rounded-pill text-bg-secondary border">{{ item.occurrence_count }} konum</span>
+                  {% endif %}
                 <div class="severity-pill {{ item.severity }}">
                   {% if item.severity == "critical" %}
                   <span class="severity-dot severity-critical"></span>
@@ -1094,17 +1613,22 @@
                   <span class="severity-dot severity-high"></span>
                   {% elif item.severity == "medium" %}
                   <span class="severity-dot severity-medium"></span>
+                  {% elif item.severity == "low" %}
+                  <span class="severity-dot severity-low"></span>
+                  {% elif item.severity == "info" %}
+                  <span class="severity-dot severity-info"></span>
                   {% else %}
                   <span class="severity-dot severity-low"></span>
                   {% endif %}
                   <span class="severity-text">{{ item.severity }}</span>
                 </div>
+                </div>
               </div>
-              <div class="small text-muted mt-1">
+              <div class="finding-meta">
                 {{ item.rule_id }}
                 <span class="category-pill {{ item.category }}">{{ item.category }}</span>
-                - <code>{{ item.context }}</code>
               </div>
+              <code class="finding-context-code">{{ item.context }}</code>
             </li>
             {% endfor %}
           </ul>
@@ -1117,6 +1641,27 @@
     </div>
 
     <script>
+      // Dosya seçildiğinde dosya adını göster
+      (function () {
+        document.querySelectorAll('.file-picker-input').forEach(function (input) {
+          var nameEl = document.querySelector('[data-filename-for="' + input.id + '"]');
+          if (!nameEl) return;
+          var placeholder = nameEl.getAttribute('data-placeholder') || 'Dosya seçin';
+
+          function syncName() {
+            if (input.files && input.files.length > 0) {
+              nameEl.textContent = input.files[0].name;
+              nameEl.classList.add('has-file');
+            } else {
+              nameEl.textContent = placeholder;
+              nameEl.classList.remove('has-file');
+            }
+          }
+
+          input.addEventListener('change', syncName);
+        });
+      })();
+
       // Theme toggle
       (function () {
         var btn = document.getElementById('theme-toggle');
