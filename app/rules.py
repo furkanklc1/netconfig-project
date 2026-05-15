@@ -97,7 +97,7 @@ def _rule_unassigned_vlan(data: ConfigData) -> list[Finding]:
             Finding(
                 rule_id="R001",
                 severity="medium",
-                message=f"VLAN {vlan} tanımlı ancak hiçbir interface'te kullanılmıyor.",
+                message=f"VLAN {vlan} tanımlı, ancak hiçbir interface üzerinde kullanılmıyor.",
                 context=f"vlan {vlan}",
             )
         )
@@ -135,9 +135,7 @@ def _rule_shutdown_trunk(data: ConfigData) -> list[Finding]:
                 Finding(
                     rule_id="R003",
                     severity="medium",
-                    message=(
-                        f"{intf.name} shutdown durumda ama trunk olarak yapılandırılmış."
-                    ),
+                    message=f"{intf.name} shutdown durumda, ancak trunk olarak yapılandırılmış.",
                     context=f"interface {intf.name}",
                 )
             )
@@ -725,7 +723,7 @@ def _rule_ssh_timeout_missing(data: ConfigData) -> list[Finding]:
             Finding(
                 rule_id="R040",
                 severity="low",
-                message="`ip ssh time-out` tanımlı değil (önerilen 60).",
+                message="`ip ssh time-out` tanımlı değil (önerilen süre: 60 saniye).",
                 context="global configuration",
             )
         ]
@@ -1294,8 +1292,8 @@ def _rule_snmp_contact_missing(data: ConfigData) -> list[Finding]:
             rule_id="R076",
             severity="low",
             message=(
-                "`snmp-server contact` tanımlı değil. NMS ve operasyon ekipleri için "
-                "acil durum iletişim bilgisi önerilir."
+                "SNMP kullanılıyor ancak `snmp-server contact` bilgisi tanımlı değil. "
+                "NMS ve operasyon ekipleri için acil durum iletişim bilgisi önerilir."
             ),
             context="snmp-server",
         )

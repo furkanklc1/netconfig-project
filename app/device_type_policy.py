@@ -99,7 +99,7 @@ SKIP_RULES_BY_ROLE = {
 def infer_device_role(text: str, device_type: str) -> str:
     """
     Konfigürasyon içeriğinden cihazın rolünü (Core vs Access) otomatik algılar.
-    L3 bir switch'in backbone mu yoksa sadece edge routing mi yaptığını anlar.
+    L3 bir switch'in backbone rolünde mi, yoksa yalnızca edge routing mi yaptığını tespit eder.
     """
     if device_type == "router":
         return "router"

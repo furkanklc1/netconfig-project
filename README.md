@@ -2,7 +2,7 @@
 
 # NetConfig AI
 
-**Cisco IOS konfigürasyonları için akıllı network audit & güvenlik tarayıcısı**
+**Cisco IOS konfigürasyonları için akıllı network audit ve güvenlik tarayıcısı**
 
 `.txt` / `.cfg` dosyalarını saniyeler içinde analiz eder; **79 kural** çalıştırır, **secret scanner** ile açıkta kalan parolaları yakalar ve her bulgu için aksiyon odaklı öneri üretir.
 
@@ -17,7 +17,7 @@
 
 ---
 
-> **Not:** Bu sürüm yalnızca **Cisco IOS / IOS XE** konfigürasyonlarını analiz eder. NX-OS, Arista EOS, Juniper Junos ve diğer vendor'lar için destek yol haritasındadır.
+> **Not:** Bu sürüm yalnızca **Cisco IOS / IOS XE** konfigürasyonlarını analiz eder. NX-OS, Arista EOS, Juniper Junos ve diğer vendor'lara yönelik destek, yol haritasındadır.
 >
 > Proje aktif geliştirme aşamasındadır; yeni kurallar ve LLM entegrasyonu için sürekli güncellenmektedir.
 
@@ -45,7 +45,7 @@
 
 NetConfig AI, kurumsal network mühendislerinin **konfigürasyon denetimi**, **uyumluluk kontrolü** ve **risk analizi** süreçlerini otomatize etmek için tasarlanmıştır.
 
-Mimari üç ana katmandan oluşur:
+Mimari dört ana katmandan oluşur:
 
 | Katman | Görev |
 |--------|-------|
@@ -67,10 +67,14 @@ Bu mimari sayesinde sonuçlar **deterministik** (aynı config → aynı bulgu), 
 - Her bulgu için **aksiyon odaklı öneri metni**
 - Bulgular severity'ye göre otomatik sıralanır (`critical` → `info`)
 
+### Otomatik Cihaz Rolü Tespiti (Device Role)
+- **Akıllı Rol Filtrelemesi:** Sisteme yüklenen konfigürasyondan cihazın bir **Omurga (Core/Backbone)** mu yoksa **Kenar (Access)** switch mi olduğu otomatik tespit edilir.
+- **Dinamik Kural Motoru:** Access switch'lerde BGP, OSPF, CoPP, uRPF gibi gereksiz gelişmiş kurallar gizlenerek sıfır "false-positive" (yanıltıcı uyarı) sağlanır.
+
 ### Secret / Credential Tarama
 - Cisco **Type 7** ve **Type 0 (cleartext)** parolaları
 - **TACACS+ / RADIUS / BGP / OSPF / ISAKMP** key'leri (cleartext)
-- Otomatik **maskeleme** — gerçek değer hiçbir zaman ekrana basılmaz
+- Şifre ve key'lerin rapor ekranlarında **şeffaf (cleartext)** gösterimi ile tam denetim (İstenirse maskelenebilir).
 - IPv4 adresleri için son octet maskelemesi (rapor paylaşımı için)
 
 ### Vendor / Platform Fingerprinting
@@ -86,12 +90,13 @@ Bu mimari sayesinde sonuçlar **deterministik** (aynı config → aynı bulgu), 
 - Vendor / hostname / cihaz türü uyumsuzluğunda **otomatik uyarı**
 
 ### Raporlama & UI
+- **Material Design Renk Paleti** — Bulgular için (Kritik: Koyu Kırmızı, Yüksek: Koyu Turuncu vb.) modern, okunaklı renk şeması.
 - **HTML rapor** — paylaşılabilir, basılabilir
 - **PDF rapor** — yönetici sunumları için A4 formatı, footer / sayfa numaralı
-- **Light / Dark mode** — kullanıcı seçimi `localStorage`'da kalıcı
+- **Light / Dark mode** — kullanıcı tercihi `localStorage` üzerinde kalıcıdır
 - Modern Flask + Bootstrap arayüzü, network temalı animasyonlu hero
 - POST-Redirect-GET pattern — sayfa yenilemede yeniden gönderim olmaz
-- **Input validation** — boş veya non-Cisco IOS dosyalar baştan reddedilir
+- **Input validation** — Sadece geçerli `.txt`, `.cfg` ve `.conf` uzantıları kabul edilir. Boş veya Cisco IOS formatında olmayan dosyalar analiz öncesinde reddedilir.
 
 ### Geliştirici Deneyimi
 - Tek dosya **CLI** desteği (JSON çıktı opsiyonu)
@@ -436,8 +441,9 @@ LLM katmanı eklendiğinde mevcut kural motoru çalışmaya devam edecek; AI yal
 - [ ] CSV rapor çıktısı
 - [ ] Rule coverage için otomatik test seti
 - [ ] Trend grafiği ve zaman serisi analizi
+- [x] **Otomatik Cihaz Rolü (Core/Access) Tespiti**
 - [x] PDF / HTML rapor çıktısı
-- [x] Light / Dark mode
+- [x] Light / Dark mode (Material Design renk optimizasyonu)
 - [x] Secret / Credential Scanner
 - [x] Vendor / Platform fingerprinting
 - [x] Configuration Diff Analysis
