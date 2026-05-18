@@ -1752,16 +1752,26 @@ def _rule_aaa_commands_authorization_accounting(data: ConfigData) -> list[Findin
 
 
 def _rule_console_aux_access_class_protection(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
     if not data.console_access_class_configured:
-        return [
+        findings.append(
             Finding(
                 rule_id="R104",
                 severity="medium",
                 message="`line con 0` (Console) altında `access-class` ACL koruması tanımlanmamış. Konsol portuna doğrudan erişimi sınırlandırmak için erişim kontrol filtresi uygulanmalıdır.",
                 context="global configuration",
             )
-        ]
-    return []
+        )
+    if data.aux_section_seen and not data.aux_no_exec_set and not data.aux_access_class_configured:
+        findings.append(
+            Finding(
+                rule_id="R104",
+                severity="medium",
+                message="`line aux 0` (AUX) altında `access-class` ACL koruması tanımlanmamış ve hat `no exec` ile kapatılmamış. AUX portuna doğrudan erişimi sınırlandırmak için erişim kontrol filtresi uygulanmalıdır.",
+                context="global configuration",
+            )
+        )
+    return findings
 
 
 def _rule_boot_system_image_configured(data: ConfigData) -> list[Finding]:
