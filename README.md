@@ -9,7 +9,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.x-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
-[![License](https://img.shields.io/badge/license-MIT-22c55e)]()
+[![License](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
 [![Rules](https://img.shields.io/badge/Rules-107-4f46e5)]()
 [![Vendor](https://img.shields.io/badge/Vendor-Cisco%20IOS%2FIOS%20XE-005073)]()
 
