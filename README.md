@@ -411,26 +411,26 @@ Toplam **99** kural, 5 kategoride:
 | R077 | low | SNMP kullanılıyor; `snmp-server location` yok |
 | R078 | medium | PKI trustpoint var; `ip domain-name` yok |
 | R079 | medium | `archive` var; `log config` (config change log) yok |
-| R080 | medium | Password Recovery Disabled Control |
-| R081 | high | Smart Install (SMI) Control |
-| R082 | high | IP Options Selective Drop Control |
-| R083 | medium | IP Directed Broadcast Control |
-| R084 | high | IP Source Guard Control |
-| R085 | high | EIGRP Authentication Control |
-| R086 | high | FHRP (HSRP/VRRP/GLBP) Authentication Control |
-| R087 | low | Logging Console Control |
-| R088 | medium | Secure Copy Protocol (SCP) Server Control |
-| R089 | low | SNMP Views Limitation Control |
-| R090 | low | Exclusive Configuration Lock Control |
-| R091 | medium | Cisco IOS Resilient Configuration Control |
-| R092 | medium | Memory Threshold Notification Control |
-| R093 | low | CPU Threshold Notification Control |
-| R094 | low | Reserve Memory for Console Control |
-| R095 | medium | Control Plane Mismatch / ICMP Unreachables Rate-Limit |
-| R096 | medium | TCP Small Services Control |
-| R097 | low | Maintenance Operation Protocol (MOP) Control |
-| R098 | low | Bootstrap Protocol (BOOTP) Server Control |
-| R099 | high | BGP Routing Inbound Route-Filtering (Prefix/Filter List) |
+| R080 | medium | `no service password-recovery` tanımlı değil |
+| R081 | high | Smart Install (SMI) özelliğini kapatan `no vstack` komutu eksik |
+| R082 | high | Global `ip options drop` etkin değil |
+| R083 | medium | Arayüz üzerinde `no ip directed-broadcast` tanımlı değil |
+| R084 | high | Erişim portunda `ip verify source` (IP Source Guard) aktif değil |
+| R085 | high | Arayüzde EIGRP için MD5 kimlik doğrulaması tanımlanmamış |
+| R086 | high | İlk atlama yedeklilik protokolü (HSRP/VRRP/GLBP) için MD5 doğrulaması eksik |
+| R087 | low | `no logging console` veya `no logging monitor` ayarlanmamış |
+| R088 | medium | `ip scp server enable` komutu tespit edilemedi |
+| R089 | low | `snmp-server view` kısıtlaması tanımlanmamış |
+| R090 | low | `configuration mode exclusive auto` ayarlanmamış |
+| R091 | medium | `secure boot-image` ve `secure boot-config` koruması aktif değil |
+| R092 | medium | `memory free low-watermark` veya `memory reserve critical` tanımları eksik |
+| R093 | low | `snmp-server enable traps cpu` veya `process cpu threshold` komutu eksik |
+| R094 | low | `memory reserve console` tanımlanmamış |
+| R095 | medium | `no ip unreachables` veya `ip icmp rate-limit unreachable` ayarlanmamış |
+| R096 | medium | `no service tcp-small-servers` veya `no service udp-small-servers` eksik |
+| R097 | low | Aktif arayüz altında `no mop enabled` komutu bulunamadı |
+| R098 | low | `no ip bootp server` veya `ip dhcp bootp ignore` yapılandırılmamış |
+| R099 | high | BGP neighbor için prefix-list veya filter-list tanımlanmamış |
 
 ---
 
