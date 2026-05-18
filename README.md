@@ -4,13 +4,13 @@
 
 **Cisco IOS konfigürasyonları için akıllı network audit ve güvenlik tarayıcısı**
 
-`.txt` / `.cfg` dosyalarını saniyeler içinde analiz eder; **79 kural** çalıştırır, **secret scanner** ile açıkta kalan parolaları yakalar ve her bulgu için aksiyon odaklı öneri üretir.
+`.txt` / `.cfg` dosyalarını saniyeler içinde analiz eder; **99 kural** çalıştırır, **secret scanner** ile açıkta kalan parolaları yakalar ve her bulgu için aksiyon odaklı öneri üretir.
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.x-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
 [![License](https://img.shields.io/badge/license-MIT-22c55e)]()
-[![Rules](https://img.shields.io/badge/Rules-79-4f46e5)]()
+[![Rules](https://img.shields.io/badge/Rules-99-4f46e5)]()
 [![Vendor](https://img.shields.io/badge/Vendor-Cisco%20IOS%2FIOS%20XE-005073)]()
 
 </div>
@@ -50,7 +50,7 @@ Mimari dört ana katmandan oluşur:
 | Katman | Görev |
 |--------|-------|
 | **Parser** | Cisco IOS söz dizimini regex + state machine ile yapısal veri modeline çevirir |
-| **Rule Engine** | 79 ayrı kuralı çalıştırarak güvenlik / operasyon / uyumluluk bulguları üretir |
+| **Rule Engine** | 99 ayrı kuralı çalıştırarak güvenlik / operasyon / uyumluluk bulguları üretir |
 | **Secret Scanner** | Açıkta kalan parola / key'leri tespit eder ve otomatik maskeler |
 | **Recommendation Layer** | Her bulgu için aksiyon odaklı, best-practice referanslı öneri üretir |
 
@@ -61,7 +61,7 @@ Bu mimari sayesinde sonuçlar **deterministik** (aynı config → aynı bulgu), 
 ## Öne Çıkan Özellikler
 
 ### Analiz & Denetim
-- **79 hazır kural** (`R001..R079`) — security, routing, L2, compliance, operations
+- **99 hazır kural** (`R001..R099`) — security, routing, L2, compliance, operations
 - **5 severity seviyesi**: `critical`, `high`, `medium`, `low`, `info`
 - **5 kategori filtresi**: tek tıkla bulguları daraltma
 - Her bulgu için **aksiyon odaklı öneri metni**
@@ -167,7 +167,7 @@ Bu mimari sayesinde sonuçlar **deterministik** (aynı config → aynı bulgu), 
                       ▼                 ▼
         ┌──────────────────────┐   ┌──────────────────────┐
         │   Rule Engine        │   │   Secret Scanner     │
-        │   R001..R079         │   │   (credential lines) │
+        │   R001..R099         │   │   (credential lines) │
         │   (parser tabanlı)   │   │   R062..R068         │
         └──────────┬───────────┘   └──────────┬───────────┘
                    │                          │
@@ -198,7 +198,7 @@ netconfig-ai/
 │   ├── ai_commentary.py     # bulgu için öneri üretimi + maskeleme entegrasyonu
 │   ├── models.py            # dataclass tabanlı veri modelleri
 │   ├── parser.py            # Cisco IOS regex + state machine parser
-│   ├── rules.py             # 79 kontrol kuralı + kategori map
+│   ├── rules.py             # 99 kontrol kuralı + kategori map
 │   ├── secret_scanner.py    # parola / key tespiti + maskeleme
 │   ├── device_type_policy.py  # cihaz türü tahmini + kural kapsamı filtrelemesi
 │   ├── service.py           # tek dosya & diff analiz orkestrasyonu
@@ -298,32 +298,35 @@ Sistem size şunları sunar:
 
 ## Kural Seti
 
-Toplam **79** kural, 5 kategoride:
+Toplam **99** kural, 5 kategoride:
 
-### Security (35 kural)
+### Security (45 kural)
 
 `R002`, `R007`, `R008`, `R009`, `R010`, `R011`, `R012`, `R013`, `R014`, `R018`,
 `R020`, `R021`, `R022`, `R027`, `R028`, `R031`, `R032`, `R040`, `R041`,
 `R046`, `R047`, `R048`, `R049`, `R052`,
 `R062`, `R063`, `R064`, `R065`, `R066`, `R067`, `R068` *(secret/credential scanning)*,
-`R071`, `R072`, `R073`, `R078`
+`R071`, `R072`, `R073`, `R078`,
+`R080`, `R081`, `R082`, `R083`, `R084`, `R086`, `R088`, `R089`, `R095`, `R096`
 
-### Routing (13 kural)
+### Routing (15 kural)
 
-`R005`, `R006`, `R050`, `R051`, `R053`, `R054`, `R055`, `R056`, `R057`, `R058`, `R059`, `R060`, `R061`
+`R005`, `R006`, `R050`, `R051`, `R053`, `R054`, `R055`, `R056`, `R057`, `R058`, `R059`, `R060`, `R061`,
+`R085`, `R099`
 
 ### L2 / Switching (10 kural)
 
 `R025`, `R026`, `R029`, `R030`, `R033`, `R034`, `R035`, `R036`, `R037`, `R045`
 
-### Compliance (2 kural)
+### Compliance (3 kural)
 
-`R017`, `R069`
+`R017`, `R069`, `R091`
 
-### Operations (19 kural)
+### Operations (26 kural)
 
 `R001`, `R003`, `R004`, `R015`, `R016`, `R019`, `R023`, `R024`, `R038`, `R039`, `R042`, `R043`,
-`R044`, `R070`, `R074`, `R075`, `R076`, `R077`, `R079`
+`R044`, `R070`, `R074`, `R075`, `R076`, `R077`, `R079`,
+`R087`, `R090`, `R092`, `R093`, `R094`, `R097`, `R098`
 
 ### Tüm Kuralların Listesi
 
@@ -408,6 +411,26 @@ Toplam **79** kural, 5 kategoride:
 | R077 | low | SNMP kullanılıyor; `snmp-server location` yok |
 | R078 | medium | PKI trustpoint var; `ip domain-name` yok |
 | R079 | medium | `archive` var; `log config` (config change log) yok |
+| R080 | medium | Password Recovery Disabled Control |
+| R081 | high | Smart Install (SMI) Control |
+| R082 | high | IP Options Selective Drop Control |
+| R083 | medium | IP Directed Broadcast Control |
+| R084 | high | IP Source Guard Control |
+| R085 | high | EIGRP Authentication Control |
+| R086 | high | FHRP (HSRP/VRRP/GLBP) Authentication Control |
+| R087 | low | Logging Console Control |
+| R088 | medium | Secure Copy Protocol (SCP) Server Control |
+| R089 | low | SNMP Views Limitation Control |
+| R090 | low | Exclusive Configuration Lock Control |
+| R091 | medium | Cisco IOS Resilient Configuration Control |
+| R092 | medium | Memory Threshold Notification Control |
+| R093 | low | CPU Threshold Notification Control |
+| R094 | low | Reserve Memory for Console Control |
+| R095 | medium | Control Plane Mismatch / ICMP Unreachables Rate-Limit |
+| R096 | medium | TCP Small Services Control |
+| R097 | low | Maintenance Operation Protocol (MOP) Control |
+| R098 | low | Bootstrap Protocol (BOOTP) Server Control |
+| R099 | high | BGP Routing Inbound Route-Filtering (Prefix/Filter List) |
 
 ---
 
