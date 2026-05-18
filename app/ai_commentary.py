@@ -433,6 +433,114 @@ def enrich_finding(finding: Finding) -> str:
             "ekleyin; path/maximum ayarlarınızı koruyarak değişiklikleri izlenebilir yapın "
             "(güvenlik bulgusu değildir)."
         )
+    if finding.rule_id == "R080":
+        return (
+            "`service password-recovery` özelliğini aktif edin (veya varsayılan olarak açık bırakın). "
+            "Eğer kapatıldıysa (`no service password-recovery`), konsol şifresi unutulduğunda cihazın "
+            "ROMMON modundan parola sıfırlanması veya kurtarılması mümkün olmaz."
+        )
+    if finding.rule_id == "R081":
+        return (
+            "Smart Install (SMI) özelliğini devre dışı bırakmak için global yapılandırma modunda "
+            "`no vstack` komutunu uygulayın. SMI protokolü, ağ üzerinden izinsiz dosya indirme/yükleme "
+            "ve uzaktan kod yürütme zafiyetlerine yol açabilir."
+        )
+    if finding.rule_id == "R082":
+        return (
+            "IP Options içeren paketlerin CPU tarafından işlenip DoS riskine neden olmasını engellemek için "
+            "global düzeyde `ip options drop` veya `ip options selective-drop` komutunu etkinleştirin."
+        )
+    if finding.rule_id == "R083":
+        return (
+            "İlgili arayüz altında `no ip directed-broadcast` komutunu uygulayarak yönlendirilmiş "
+            "broadcast paketlerini engelleyin. Bu, Smurf vb. yansıtmalı DDoS saldırılarında ağınızın "
+            "aracı olarak kullanılmasını önler."
+        )
+    if finding.rule_id == "R084":
+        return (
+            "Erişim portunda IP Source Guard özelliğini etkinleştirmek için arayüz altında `ip verify source` "
+            "komutunu uygulayın ve bunu DHCP Snooping ile destekleyerek IP spoofing saldırılarını engelleyin."
+        )
+    if finding.rule_id == "R085":
+        return (
+            "EIGRP yönlendirme protokolünün güvenliğini sağlamak için ilgili arayüzlerde `ip authentication mode "
+            "eigrp <as> md5` ve `ip authentication key-chain eigrp <as> <chain>` ile MD5 kimlik doğrulaması tanımlayın."
+        )
+    if finding.rule_id == "R086":
+        return (
+            "İlk atlama yedeklilik protokolü (HSRP/VRRP/GLBP) için MD5 kimlik doğrulaması tanımlayın "
+            "(örneğin HSRP için `standby <grup> authentication md5 key-string <anahtar>`). Bu, sahte ağ geçidi "
+            "anonslarını ve trafiğin ele geçirilmesini önler."
+        )
+    if finding.rule_id == "R087":
+        return (
+            "Konsol portuna aşırı yük binmesini engellemek için `no logging console` veya `no logging monitor` "
+            "komutunu uygulayın veya syslog seviyesini sınırlandırın. Bu, yüksek trafik ve log üretimi anında "
+            "CPU'nun tükenmesini önler."
+        )
+    if finding.rule_id == "R088":
+        return (
+            "Güvensiz, şifrelenmemiş dosya transfer protokolleri (FTP/TFTP) yerine SSH tabanlı şifrelenmiş "
+            "dosya transferi için global olarak `ip scp server enable` komutu ile Secure Copy (SCP) servisini aktif edin."
+        )
+    if finding.rule_id == "R089":
+        return (
+            "SNMP topluluklarının (community) tüm MIB ağacını okuyup hassas bilgileri sızdırmasını engellemek için "
+            "`snmp-server view <view_name> <iso_mib> included` ile MIB sınırlandırması tanımlayın ve community "
+            "stringleri bu view ile ilişkilendirin."
+        )
+    if finding.rule_id == "R090":
+        return (
+            "Global düzeyde `configuration mode exclusive auto` komutunu yapılandırarak konfigürasyon kilitlemesini "
+            "etkinleştirin. Bu sayede aynı anda birden fazla yöneticinin çelişen değişiklikler yapması engellenir."
+        )
+    if finding.rule_id == "R091":
+        return (
+            "Cihazın işletim sistemi imajını ve yedek konfigürasyonunu koruma altına almak için global olarak "
+            "`secure boot-image` ve `secure boot-config` (Cisco Resilient Configuration) komutlarını aktif edin."
+        )
+    if finding.rule_id == "R092":
+        return (
+            "Cihazın bellek tükenmesi durumlarında kritik yönetim süreçlerinin hayatta kalabilmesi için "
+            "`memory free low-watermark processor <KB>` veya `memory reserve critical <KB>` parametrelerini tanımlayın."
+        )
+    if finding.rule_id == "R093":
+        return (
+            "Aşırı CPU yüklenmesi durumunda yönetim sisteminizi (NMS) bilgilendirmek için `snmp-server enable traps "
+            "cpu threshold` veya global olarak `process cpu threshold` alarm limitlerini yapılandırın."
+        )
+    if finding.rule_id == "R094":
+        return (
+            "Cihazın belleği tamamen tükendiğinde (OOM durumu), konsoldan erişilip analiz yapılabilmesi için "
+            "`memory reserve console <KB>` komutu ile konsol oturumlarına özel bellek rezervasyonu yapın."
+        )
+    if finding.rule_id == "R095":
+        return (
+            "ACL'e takılan yoğun paketler nedeniyle üretilen ICMP Unreachable paketlerinin CPU'yu tüketmesini önlemek "
+            "için ilgili arayüzlerde `no ip unreachables` komutunu uygulayın veya global olarak `ip icmp rate-limit "
+            "unreachable <ms>` limitini yapılandırın."
+        )
+    if finding.rule_id == "R096":
+        return (
+            "Eski ve kullanılmayan güvensiz küçük servisleri kapatmak için global yapılandırma modunda "
+            "`no service tcp-small-servers` and `no service udp-small-servers` komutlarını uygulayın."
+        )
+    if finding.rule_id == "R097":
+        return (
+            "Arayüz altında `no mop enabled` komutunu uygulayarak kullanılmayan katman 2 Maintenance Operation "
+            "Protocol (MOP) servisini kapatın ve gereksiz L2 trafik yayılımını önleyin."
+        )
+    if finding.rule_id == "R098":
+        return (
+            "DHCP aktif bırakılırken kullanılmayan BOOTP servislerini pasifleştirmek için global olarak "
+            "`no ip bootp server` veya `ip dhcp bootp ignore` komutunu yapılandırın."
+        )
+    if finding.rule_id == "R099":
+        return (
+            "BGP komşuluklarında Bogon/istenmeyen rotaların RIB/FIB tablosunu tüketmesini engellemek için komşu "
+            "tanımı altında inbound yönde prefix-list veya filter-list filtreleri tanımlayın "
+            "(`neighbor <ip> prefix-list <list> in`)."
+        )
     return "Konfigürasyonu iş gereksinimine göre gözden geçirin."
 
 

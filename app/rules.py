@@ -81,6 +81,26 @@ RULE_CATEGORIES: dict[str, str] = {
     "R077": "operations",
     "R078": "security",
     "R079": "operations",
+    "R080": "security",
+    "R081": "security",
+    "R082": "security",
+    "R083": "security",
+    "R084": "security",
+    "R085": "routing",
+    "R086": "security",
+    "R087": "operations",
+    "R088": "security",
+    "R089": "security",
+    "R090": "operations",
+    "R091": "compliance",
+    "R092": "operations",
+    "R093": "operations",
+    "R094": "operations",
+    "R095": "security",
+    "R096": "security",
+    "R097": "operations",
+    "R098": "operations",
+    "R099": "routing",
 }
 
 
@@ -1355,6 +1375,304 @@ def _rule_archive_log_config_missing(data: ConfigData) -> list[Finding]:
     ]
 
 
+def _rule_password_recovery_disabled(data: ConfigData) -> list[Finding]:
+    if not data.service_password_recovery_disabled:
+        return [
+            Finding(
+                rule_id="R080",
+                severity="medium",
+                message="`no service password-recovery` tanımlı değil. Fiziksel erişimi olan kişiler ROMMON modunda parolayı sıfırlayabilir.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_vstack_control(data: ConfigData) -> list[Finding]:
+    if not data.vstack_disabled:
+        return [
+            Finding(
+                rule_id="R081",
+                severity="high",
+                message="Smart Install (SMI) özelliğini kapatan `no vstack` komutu bulunamadı. Cihaz kritik istismar risklerine açık olabilir.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_ip_options_drop_control(data: ConfigData) -> list[Finding]:
+    if not data.ip_options_drop_enabled:
+        return [
+            Finding(
+                rule_id="R082",
+                severity="high",
+                message="Global `ip options drop` etkin değil. IP opsiyonu içeren paketler doğrudan CPU (process-switching) tarafından işleneceğinden DoS riski taşır.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_ip_directed_broadcast_control(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for intf in data.interfaces:
+        if intf.has_ip_address and not intf.shutdown:
+            if not intf.ip_directed_broadcast_disabled:
+                findings.append(
+                    Finding(
+                        rule_id="R083",
+                        severity="medium",
+                        message=f"{intf.name} arayüzünde `no ip directed-broadcast` tanımlı değil. Smurf gibi yansıtmalı DDoS saldırılarında aracı olarak kullanılabilir.",
+                        context=f"interface {intf.name}",
+                    )
+                )
+    return findings
+
+
+def _rule_ip_source_guard_control(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for intf in data.interfaces:
+        if intf.switchport_mode == "access" and not intf.shutdown:
+            if not intf.ip_source_guard_enabled:
+                findings.append(
+                    Finding(
+                        rule_id="R084",
+                        severity="high",
+                        message=f"{intf.name} erişim portunda `ip verify source` (IP Source Guard) aktif değil. IP Spoofing saldırılarına açık durumdadır.",
+                        context=f"interface {intf.name}",
+                    )
+                )
+    return findings
+
+
+def _rule_eigrp_authentication_control(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    if not data.eigrp_enabled:
+        return findings
+    for intf in data.interfaces:
+        if intf.has_ip_address and not intf.shutdown:
+            name_lower = intf.name.lower()
+            if name_lower.startswith("loopback") or name_lower.startswith("lo"):
+                continue
+            if not intf.eigrp_authentication_enabled:
+                findings.append(
+                    Finding(
+                        rule_id="R085",
+                        severity="high",
+                        message=f"{intf.name} arayüzünde EIGRP için MD5 kimlik doğrulaması tanımlanmamış; sahte yönlendirme güncellemelerine açık.",
+                        context=f"interface {intf.name}",
+                    )
+                )
+    return findings
+
+
+def _rule_fhrp_authentication_control(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for intf in data.interfaces:
+        if intf.fhrp_enabled and not intf.fhrp_authentication_md5:
+            findings.append(
+                Finding(
+                    rule_id="R086",
+                    severity="high",
+                    message=f"{intf.name} ilk atlama yedeklilik protokolü (HSRP/VRRP/GLBP) için MD5 doğrulaması eksik. Ağ geçidinin ele geçirilme riski var.",
+                    context=f"interface {intf.name}",
+                )
+            )
+    return findings
+
+
+def _rule_logging_console_control(data: ConfigData) -> list[Finding]:
+    if not data.logging_console_disabled:
+        return [
+            Finding(
+                rule_id="R087",
+                severity="low",
+                message="`no logging console` veya `no logging monitor` ayarlanmamış. Seri konsol portuna yüksek trafik anında aşırı log basılması CPU yükünü tehlikeli seviyede artırabilir.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_scp_server_control(data: ConfigData) -> list[Finding]:
+    if not data.scp_server_enabled:
+        return [
+            Finding(
+                rule_id="R088",
+                severity="medium",
+                message="`ip scp server enable` komutu tespit edilemedi. Güvensiz FTP/TFTP protokolleri yerine şifrelenmiş dosya transferi (SCP) aktif edilmelidir.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_snmp_views_limitation_control(data: ConfigData) -> list[Finding]:
+    if not data.snmp_communities and not data.snmpv3_configured:
+        return []
+    if not data.snmp_views_configured:
+        return [
+            Finding(
+                rule_id="R089",
+                severity="low",
+                message="`snmp-server view` kısıtlaması tanımlanmamış. SNMP topluluklarının (community) tüm MIB ağacına erişebilmesi bilgi sızıntısı riski oluşturur.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_exclusive_config_lock_control(data: ConfigData) -> list[Finding]:
+    if not data.configuration_mode_exclusive_auto:
+        return [
+            Finding(
+                rule_id="R090",
+                severity="low",
+                message="`configuration mode exclusive auto` ayarlanmamış. Eş zamanlı olarak birden fazla yöneticinin konfigürasyon değiştirmesi engellenmelidir.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_resilient_config_control(data: ConfigData) -> list[Finding]:
+    if not data.secure_boot_image_enabled or not data.secure_boot_config_enabled:
+        return [
+            Finding(
+                rule_id="R091",
+                severity="medium",
+                message="`secure boot-image` ve `secure boot-config` koruması aktif değil. Kötü niyetli veya kazara işletim sistemi imajının veya yedek konfigürasyonun silinme riski vardır.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_memory_threshold_notification_control(data: ConfigData) -> list[Finding]:
+    if not data.memory_free_low_watermark_set and not data.memory_reserve_critical_set:
+        return [
+            Finding(
+                rule_id="R092",
+                severity="medium",
+                message="`memory free low-watermark` veya `memory reserve critical` tanımları eksik. Bellek tükenmesi durumlarında kritik yönetim süreçlerinin hayatta kalması garanti altına alınmamıştır.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_cpu_threshold_notification_control(data: ConfigData) -> list[Finding]:
+    if not data.cpu_threshold_notification_enabled:
+        return [
+            Finding(
+                rule_id="R093",
+                severity="low",
+                message="`snmp-server enable traps cpu threshold` veya `process cpu threshold` komutu bulunamadı. Aşırı CPU yüklenmesi durumunda yönetim sistemlerine (NMS) SNMP tuzağı (trap) gönderilmiyor.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_reserve_memory_for_console_control(data: ConfigData) -> list[Finding]:
+    if not data.memory_reserve_console_set:
+        return [
+            Finding(
+                rule_id="R094",
+                severity="low",
+                message="`memory reserve console` tanımlanmamış. Cihazın belleği tamamen tükendiğinde (OOM durumunda), mühendislerin trouble-isolation yapabilmesi için konsola bellek ayrılmalıdır.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_icmp_unreachables_rate_limit_control(data: ConfigData) -> list[Finding]:
+    if data.ip_icmp_rate_limit_unreachable_set:
+        return []
+    findings: list[Finding] = []
+    for intf in data.interfaces:
+        if intf.has_ip_address and not intf.shutdown:
+            if not intf.ip_unreachables_disabled:
+                findings.append(
+                    Finding(
+                        rule_id="R095",
+                        severity="medium",
+                        message=f"{intf.name} arayüzünde `no ip unreachables` veya `ip icmp rate-limit unreachable` ayarlanmamış. ACL'e takılan yoğun paketler için üretilen ICMP Unreachable mesajları CPU'yu tüketebilir.",
+                        context=f"interface {intf.name}",
+                    )
+                )
+    return findings
+
+
+def _rule_tcp_small_services_control(data: ConfigData) -> list[Finding]:
+    if not data.no_service_tcp_small_servers or not data.no_service_udp_small_servers:
+        return [
+            Finding(
+                rule_id="R096",
+                severity="medium",
+                message="Eski IOS sürümlerinde açık gelebilen servisleri kapatan `no service tcp-small-servers` veya `no service udp-small-servers` komutu eksik. echo, discard, daytime ve chargen servisleri DoS saldırı vektörüdür.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_mop_control(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for intf in data.interfaces:
+        if intf.has_ip_address and not intf.shutdown:
+            name_lower = intf.name.lower()
+            if (
+                name_lower.startswith("loopback")
+                or name_lower.startswith("lo")
+                or name_lower.startswith("tunnel")
+                or name_lower.startswith("tu")
+                or name_lower.startswith("null")
+            ):
+                continue
+            if not intf.mop_disabled:
+                findings.append(
+                    Finding(
+                        rule_id="R097",
+                        severity="low",
+                        message=f"{intf.name} arayüzü altında `no mop enabled` komutu bulunamadı. Kullanılmayan katman 2 MOP servisi kapatılmalıdır.",
+                        context=f"interface {intf.name}",
+                    )
+                )
+    return findings
+
+
+def _rule_bootp_server_control(data: ConfigData) -> list[Finding]:
+    if not data.bootp_server_disabled:
+        return [
+            Finding(
+                rule_id="R098",
+                severity="low",
+                message="`no ip bootp server` veya `ip dhcp bootp ignore` komutu yapılandırılmamış. DHCP aktif bırakılırken kullanılmayan BOOTP servisleri pasifleştirilmelidir.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_bgp_inbound_route_filtering(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for neighbor in data.bgp_neighbors.values():
+        if neighbor.remote_as is not None:
+            if not neighbor.prefix_or_filter_list_inbound:
+                findings.append(
+                    Finding(
+                        rule_id="R099",
+                        severity="high",
+                        message=f"BGP neighbor {neighbor.neighbor_ip} için prefix-list veya filter-list tanımlanmamış. Komşudan gelebilecek Bogon/istenmeyen rotaların (RIB/FIB tüketimini önlemek için) filtrelenmesi gerekir.",
+                        context=f"router bgp {data.bgp_local_as if data.bgp_local_as else ''}",
+                    )
+                )
+    return findings
+
+
 def run_rules(data: ConfigData) -> list[Finding]:
     findings: list[Finding] = []
     for rule in (
@@ -1430,6 +1748,26 @@ def run_rules(data: ConfigData) -> list[Finding]:
         _rule_snmp_location_missing,
         _rule_crypto_pki_missing_domain_name,
         _rule_archive_log_config_missing,
+        _rule_password_recovery_disabled,
+        _rule_vstack_control,
+        _rule_ip_options_drop_control,
+        _rule_ip_directed_broadcast_control,
+        _rule_ip_source_guard_control,
+        _rule_eigrp_authentication_control,
+        _rule_fhrp_authentication_control,
+        _rule_logging_console_control,
+        _rule_scp_server_control,
+        _rule_snmp_views_limitation_control,
+        _rule_exclusive_config_lock_control,
+        _rule_resilient_config_control,
+        _rule_memory_threshold_notification_control,
+        _rule_cpu_threshold_notification_control,
+        _rule_reserve_memory_for_console_control,
+        _rule_icmp_unreachables_rate_limit_control,
+        _rule_tcp_small_services_control,
+        _rule_mop_control,
+        _rule_bootp_server_control,
+        _rule_bgp_inbound_route_filtering,
     ):
         findings.extend(rule(data))
     for finding in findings:

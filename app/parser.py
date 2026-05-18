@@ -287,6 +287,78 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             data.has_clock_timezone = True
             continue
 
+        if re.match(r"^no\s+service\s+password-recovery$", line, flags=re.IGNORECASE):
+            data.service_password_recovery_disabled = True
+            continue
+
+        if re.match(r"^no\s+vstack$", line, flags=re.IGNORECASE):
+            data.vstack_disabled = True
+            continue
+
+        if re.match(r"^ip\s+options\s+(?:selective-)?drop$", line, flags=re.IGNORECASE):
+            data.ip_options_drop_enabled = True
+            continue
+
+        if re.match(r"^router\s+eigrp\s+\d+$", line, flags=re.IGNORECASE):
+            data.eigrp_enabled = True
+            continue
+
+        if re.match(r"^no\s+logging\s+console$", line, flags=re.IGNORECASE):
+            data.logging_console_disabled = True
+            continue
+
+        if re.match(r"^ip\s+scp\s+server\s+enable$", line, flags=re.IGNORECASE):
+            data.scp_server_enabled = True
+            continue
+
+        if re.match(r"^snmp-server\s+view\s+\S+", line, flags=re.IGNORECASE):
+            data.snmp_views_configured = True
+            continue
+
+        if re.match(r"^configuration\s+mode\s+exclusive\s+auto$", line, flags=re.IGNORECASE):
+            data.configuration_mode_exclusive_auto = True
+            continue
+
+        if re.match(r"^secure\s+boot-image$", line, flags=re.IGNORECASE):
+            data.secure_boot_image_enabled = True
+            continue
+
+        if re.match(r"^secure\s+boot-config$", line, flags=re.IGNORECASE):
+            data.secure_boot_config_enabled = True
+            continue
+
+        if re.match(r"^memory\s+free\s+low-watermark\b", line, flags=re.IGNORECASE):
+            data.memory_free_low_watermark_set = True
+            continue
+
+        if re.match(r"^memory\s+reserve\s+critical\b", line, flags=re.IGNORECASE):
+            data.memory_reserve_critical_set = True
+            continue
+
+        if re.match(r"^snmp-server\s+enable\s+traps\s+cpu\b", line, flags=re.IGNORECASE) or re.match(r"^process\s+cpu\s+threshold\b", line, flags=re.IGNORECASE):
+            data.cpu_threshold_notification_enabled = True
+            continue
+
+        if re.match(r"^memory\s+reserve\s+console\s+\d+", line, flags=re.IGNORECASE):
+            data.memory_reserve_console_set = True
+            continue
+
+        if re.match(r"^ip\s+icmp\s+rate-limit\s+unreachable\s+\d+", line, flags=re.IGNORECASE):
+            data.ip_icmp_rate_limit_unreachable_set = True
+            continue
+
+        if re.match(r"^no\s+service\s+tcp-small-servers$", line, flags=re.IGNORECASE):
+            data.no_service_tcp_small_servers = True
+            continue
+
+        if re.match(r"^no\s+service\s+udp-small-servers$", line, flags=re.IGNORECASE):
+            data.no_service_udp_small_servers = True
+            continue
+
+        if re.match(r"^no\s+ip\s+bootp\s+server$", line, flags=re.IGNORECASE) or re.match(r"^ip\s+dhcp\s+bootp\s+ignore$", line, flags=re.IGNORECASE):
+            data.bootp_server_disabled = True
+            continue
+
         if _line_sets_global_bpduguard_default(line):
             data.bpduguard_default_enabled = True
             continue
@@ -661,6 +733,19 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             neighbor.update_source_interface = src_intf
             continue
 
+        bgp_neighbor_filter_match = re.match(
+            r"^neighbor\s+(\S+)\s+(?:prefix-list|filter-list)\s+\S+\s+in$",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if in_bgp_section and bgp_neighbor_filter_match:
+            neighbor_ip = bgp_neighbor_filter_match.group(1)
+            neighbor = data.bgp_neighbors.setdefault(
+                neighbor_ip, BgpNeighbor(neighbor_ip=neighbor_ip)
+            )
+            neighbor.prefix_or_filter_list_inbound = True
+            continue
+
         if current_interface is None:
             continue
 
@@ -780,6 +865,34 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
 
         if re.match(r"^storm-control\b", line, flags=re.IGNORECASE):
             current_interface.storm_control_enabled = True
+            continue
+
+        if re.match(r"^no\s+ip\s+directed-broadcast$", line, flags=re.IGNORECASE):
+            current_interface.ip_directed_broadcast_disabled = True
+            continue
+
+        if re.match(r"^ip\s+verify\s+source\b", line, flags=re.IGNORECASE):
+            current_interface.ip_source_guard_enabled = True
+            continue
+
+        if re.match(r"^ip\s+authentication\s+mode\s+eigrp\s+\d+\s+md5$", line, flags=re.IGNORECASE):
+            current_interface.eigrp_authentication_enabled = True
+            continue
+
+        if re.match(r"^(?:standby|vrrp|glbp)\s+\d+\s+ip\s+", line, flags=re.IGNORECASE):
+            current_interface.fhrp_enabled = True
+            continue
+
+        if re.match(r"^(?:standby|vrrp|glbp)\s+\d+\s+authentication\s+md5\b", line, flags=re.IGNORECASE):
+            current_interface.fhrp_authentication_md5 = True
+            continue
+
+        if re.match(r"^no\s+ip\s+unreachables$", line, flags=re.IGNORECASE):
+            current_interface.ip_unreachables_disabled = True
+            continue
+
+        if re.match(r"^no\s+mop\s+enabled$", line, flags=re.IGNORECASE):
+            current_interface.mop_disabled = True
             continue
 
     # Global satırlar bazen üst seviye blok sırası yüzünden kaçabilir; tam metin taraması.

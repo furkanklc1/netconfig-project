@@ -22,6 +22,13 @@ class Interface:
     has_ip_address: bool = False
     urpf_enabled: bool = False
     ospf_authentication: bool = False
+    ip_directed_broadcast_disabled: bool = False
+    ip_source_guard_enabled: bool = False
+    eigrp_authentication_enabled: bool = False
+    fhrp_enabled: bool = False
+    fhrp_authentication_md5: bool = False
+    ip_unreachables_disabled: bool = False
+    mop_disabled: bool = False
 
 
 @dataclass
@@ -56,6 +63,7 @@ class BgpNeighbor:
     description_set: bool = False
     update_source_set: bool = False
     update_source_interface: str | None = None
+    prefix_or_filter_list_inbound: bool = False
 
 
 @dataclass
@@ -127,6 +135,24 @@ class ConfigData:
     crypto_pki_trustpoint_seen: bool = False
     ip_domain_name_set: bool = False
     archive_log_config_enabled: bool = False
+    service_password_recovery_disabled: bool = False
+    vstack_disabled: bool = False
+    ip_options_drop_enabled: bool = False
+    eigrp_enabled: bool = False
+    logging_console_disabled: bool = False
+    scp_server_enabled: bool = False
+    snmp_views_configured: bool = False
+    configuration_mode_exclusive_auto: bool = False
+    secure_boot_image_enabled: bool = False
+    secure_boot_config_enabled: bool = False
+    memory_free_low_watermark_set: bool = False
+    memory_reserve_critical_set: bool = False
+    cpu_threshold_notification_enabled: bool = False
+    memory_reserve_console_set: bool = False
+    ip_icmp_rate_limit_unreachable_set: bool = False
+    no_service_tcp_small_servers: bool = False
+    no_service_udp_small_servers: bool = False
+    bootp_server_disabled: bool = False
 
 
 @dataclass
