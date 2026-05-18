@@ -107,9 +107,6 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             data.enable_secret_set = True
             continue
 
-        # Type 0 (cleartext) veya hash türü belirtilmemiş `enable password` cleartext sayılır.
-        # `enable password 7 <hash>` (Type 7) veya `enable password 5/8/9 <hash>` düşük risk;
-        # cleartext olarak işaretlenmez.
         if re.match(
             r"^enable\s+password\s+(?:0\s+)?\S+$", line, flags=re.IGNORECASE
         ) and not re.match(
@@ -359,6 +356,30 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             data.bootp_server_disabled = True
             continue
 
+        if re.match(r"^ipv6\s+unicast-routing$", line, flags=re.IGNORECASE):
+            data.ipv6_unicast_routing_enabled = True
+            continue
+
+        if re.match(r"^aaa\s+authorization\s+commands\b", line, flags=re.IGNORECASE):
+            data.aaa_authorization_commands = True
+            continue
+
+        if re.match(r"^aaa\s+accounting\s+commands\b", line, flags=re.IGNORECASE):
+            data.aaa_accounting_commands = True
+            continue
+
+        if re.match(r"^boot\s+system\s+", line, flags=re.IGNORECASE):
+            data.boot_system_configured = True
+            continue
+
+        if re.match(r"^ip\s+http\s+authentication\s+aaa$", line, flags=re.IGNORECASE):
+            data.ip_http_authentication_aaa_enabled = True
+            continue
+
+        if re.match(r"^(?:distribute-list|neighbor\s+\S+\s+distribute-list)\b", line, flags=re.IGNORECASE):
+            data.has_distribute_list = True
+            continue
+
         if _line_sets_global_bpduguard_default(line):
             data.bpduguard_default_enabled = True
             continue
@@ -408,6 +429,8 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             flags=re.IGNORECASE,
         ):
             data.snmpv3_configured = True
+            if re.search(r"\b(?:auth|noauth)\b", line, flags=re.IGNORECASE) and not re.search(r"\bpriv\b", line, flags=re.IGNORECASE):
+                data.snmpv3_has_non_priv = True
             continue
 
         rsa_match = re.match(
@@ -544,6 +567,12 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
                 data.console_exec_timeout_set = True
             continue
 
+        if in_console_line and re.match(
+            r"^access-class\s+\S+\s+(in|out)$", line, flags=re.IGNORECASE
+        ):
+            data.console_access_class_configured = True
+            continue
+
         if in_vty_line and re.match(
             r"^transport\s+input\s+.*\btelnet\b.*$", line, flags=re.IGNORECASE
         ):
@@ -568,6 +597,12 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
 
         if in_aux_line and re.match(r"^no\s+exec$", line, flags=re.IGNORECASE):
             data.aux_no_exec_set = True
+            continue
+
+        if in_aux_line and re.match(
+            r"^access-class\s+\S+\s+(in|out)$", line, flags=re.IGNORECASE
+        ):
+            data.aux_access_class_configured = True
             continue
 
         if in_control_plane and re.match(
@@ -797,6 +832,14 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             current_interface.urpf_enabled = True
             continue
 
+        if re.match(
+            r"^ipv6\s+verify\s+unicast\s+source\s+reachable-via\s+(rx|any)\b",
+            line,
+            flags=re.IGNORECASE,
+        ):
+            current_interface.ipv6_urpf_enabled = True
+            continue
+
         mode_match = re.match(
             r"^switchport\s+mode\s+(access|trunk)$",
             line,
@@ -895,7 +938,6 @@ def parse_cisco_ios_config(text: str) -> ConfigData:
             current_interface.mop_disabled = True
             continue
 
-    # Global satırlar bazen üst seviye blok sırası yüzünden kaçabilir; tam metin taraması.
     if not data.bpduguard_default_enabled:
         for raw_line in text.splitlines():
             if _line_sets_global_bpduguard_default(raw_line.strip()):

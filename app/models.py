@@ -29,6 +29,7 @@ class Interface:
     fhrp_authentication_md5: bool = False
     ip_unreachables_disabled: bool = False
     mop_disabled: bool = False
+    ipv6_urpf_enabled: bool = False
 
 
 @dataclass
@@ -153,6 +154,15 @@ class ConfigData:
     no_service_tcp_small_servers: bool = False
     no_service_udp_small_servers: bool = False
     bootp_server_disabled: bool = False
+    ipv6_unicast_routing_enabled: bool = False
+    snmpv3_has_non_priv: bool = False
+    aaa_authorization_commands: bool = False
+    aaa_accounting_commands: bool = False
+    console_access_class_configured: bool = False
+    aux_access_class_configured: bool = False
+    boot_system_configured: bool = False
+    ip_http_authentication_aaa_enabled: bool = False
+    has_distribute_list: bool = False
 
 
 @dataclass
@@ -162,7 +172,5 @@ class Finding:
     message: str
     context: str
     category: str = "general"
-    # Aynı kuralın çoklu arayüz/neighbor/satır tekrarları tek satırda birleştirildiğinde
-    # diff karşılaştırması ve rapor için sabit kimlik (opsiyonel).
     stable_key: str | None = None
     occurrence_count: int = 1

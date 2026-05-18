@@ -4,13 +4,13 @@
 
 **Cisco IOS konfigürasyonları için akıllı network audit ve güvenlik tarayıcısı**
 
-`.txt` / `.cfg` dosyalarını saniyeler içinde analiz eder; **99 kural** çalıştırır, **secret scanner** ile açıkta kalan parolaları yakalar ve her bulgu için aksiyon odaklı öneri üretir.
+`.txt` / `.cfg` dosyalarını saniyeler içinde analiz eder; **107 kural** çalıştırır, **secret scanner** ile açıkta kalan parolaları yakalar ve her bulgu için aksiyon odaklı öneri üretir.
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.x-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
 [![License](https://img.shields.io/badge/license-MIT-22c55e)]()
-[![Rules](https://img.shields.io/badge/Rules-99-4f46e5)]()
+[![Rules](https://img.shields.io/badge/Rules-107-4f46e5)]()
 [![Vendor](https://img.shields.io/badge/Vendor-Cisco%20IOS%2FIOS%20XE-005073)]()
 
 </div>
@@ -50,7 +50,7 @@ Mimari dört ana katmandan oluşur:
 | Katman | Görev |
 |--------|-------|
 | **Parser** | Cisco IOS söz dizimini regex + state machine ile yapısal veri modeline çevirir |
-| **Rule Engine** | 99 ayrı kuralı çalıştırarak güvenlik / operasyon / uyumluluk bulguları üretir |
+| **Rule Engine** | 107 ayrı kuralı çalıştırarak güvenlik / operasyon / uyumluluk bulguları üretir |
 | **Secret Scanner** | Açıkta kalan parola / key'leri tespit eder ve otomatik maskeler |
 | **Recommendation Layer** | Her bulgu için aksiyon odaklı, best-practice referanslı öneri üretir |
 
@@ -61,7 +61,7 @@ Bu mimari sayesinde sonuçlar **deterministik** (aynı config → aynı bulgu), 
 ## Öne Çıkan Özellikler
 
 ### Analiz & Denetim
-- **99 hazır kural** (`R001..R099`) — security, routing, L2, compliance, operations
+- **107 hazır kural** (`R001..R107`) — security, routing, L2, compliance, operations
 - **5 severity seviyesi**: `critical`, `high`, `medium`, `low`, `info`
 - **5 kategori filtresi**: tek tıkla bulguları daraltma
 - Her bulgu için **aksiyon odaklı öneri metni**
@@ -167,7 +167,7 @@ Bu mimari sayesinde sonuçlar **deterministik** (aynı config → aynı bulgu), 
                       ▼                 ▼
         ┌──────────────────────┐   ┌──────────────────────┐
         │   Rule Engine        │   │   Secret Scanner     │
-        │   R001..R099         │   │   (credential lines) │
+        │   R001..R107         │   │   (credential lines) │
         │   (parser tabanlı)   │   │   R062..R068         │
         └──────────┬───────────┘   └──────────┬───────────┘
                    │                          │
@@ -198,7 +198,7 @@ netconfig-ai/
 │   ├── ai_commentary.py     # bulgu için öneri üretimi + maskeleme entegrasyonu
 │   ├── models.py            # dataclass tabanlı veri modelleri
 │   ├── parser.py            # Cisco IOS regex + state machine parser
-│   ├── rules.py             # 99 kontrol kuralı + kategori map
+│   ├── rules.py             # 107 kontrol kuralı + kategori map
 │   ├── secret_scanner.py    # parola / key tespiti + maskeleme
 │   ├── device_type_policy.py  # cihaz türü tahmini + kural kapsamı filtrelemesi
 │   ├── service.py           # tek dosya & diff analiz orkestrasyonu
@@ -298,21 +298,22 @@ Sistem size şunları sunar:
 
 ## Kural Seti
 
-Toplam **99** kural, 5 kategoride:
+Toplam **107** kural, 5 kategoride:
 
-### Security (45 kural)
+### Security (49 kural)
 
 `R002`, `R007`, `R008`, `R009`, `R010`, `R011`, `R012`, `R013`, `R014`, `R018`,
 `R020`, `R021`, `R022`, `R027`, `R028`, `R031`, `R032`, `R040`, `R041`,
 `R046`, `R047`, `R048`, `R049`, `R052`,
 `R062`, `R063`, `R064`, `R065`, `R066`, `R067`, `R068` *(secret/credential scanning)*,
 `R071`, `R072`, `R073`, `R078`,
-`R080`, `R081`, `R082`, `R083`, `R084`, `R086`, `R088`, `R089`, `R095`, `R096`
+`R080`, `R081`, `R082`, `R083`, `R084`, `R086`, `R088`, `R089`, `R095`, `R096`,
+`R100`, `R101`, `R102`, `R103`
 
-### Routing (15 kural)
+### Routing (16 kural)
 
 `R005`, `R006`, `R050`, `R051`, `R053`, `R054`, `R055`, `R056`, `R057`, `R058`, `R059`, `R060`, `R061`,
-`R085`, `R099`
+`R085`, `R099`, `R107`
 
 ### L2 / Switching (10 kural)
 
@@ -322,11 +323,12 @@ Toplam **99** kural, 5 kategoride:
 
 `R017`, `R069`, `R091`
 
-### Operations (26 kural)
+### Operations (29 kural)
 
 `R001`, `R003`, `R004`, `R015`, `R016`, `R019`, `R023`, `R024`, `R038`, `R039`, `R042`, `R043`,
 `R044`, `R070`, `R074`, `R075`, `R076`, `R077`, `R079`,
-`R087`, `R090`, `R092`, `R093`, `R094`, `R097`, `R098`
+`R087`, `R090`, `R092`, `R093`, `R094`, `R097`, `R098`,
+`R104`, `R105`, `R106`
 
 ### Tüm Kuralların Listesi
 
@@ -431,6 +433,14 @@ Toplam **99** kural, 5 kategoride:
 | R097 | low | Aktif arayüz altında `no mop enabled` komutu bulunamadı |
 | R098 | low | `no ip bootp server` veya `ip dhcp bootp ignore` yapılandırılmamış |
 | R099 | high | BGP neighbor için prefix-list veya filter-list tanımlanmamış |
+| R100 | high | Global `ipv6 unicast-routing` veya arayüzde IPv6 uRPF / ACL eksik |
+| R101 | medium | Kullanılmayan port varsayılan VLAN 1'de bırakılmış |
+| R102 | high | SNMPv3 grubu veya kullanıcısı `authPriv` modunda değil |
+| R103 | high | AAA komut yetkilendirmesi veya muhasebesi tanımlanmamış |
+| R104 | medium | Console veya AUX hatlarında `access-class` tanımlanmamış |
+| R105 | medium | `boot system` başlangıç imajı tanımlanmamış |
+| R106 | medium | Web arayüzü için `ip http authentication aaa` tanımlanmamış |
+| R107 | medium | Yönlendirme protokollerinde `distribute-list` filtresi eksik |
 
 ---
 

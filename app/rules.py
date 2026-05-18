@@ -101,6 +101,14 @@ RULE_CATEGORIES: dict[str, str] = {
     "R097": "operations",
     "R098": "operations",
     "R099": "routing",
+    "R100": "security",
+    "R101": "security",
+    "R102": "security",
+    "R103": "security",
+    "R104": "operations",
+    "R105": "operations",
+    "R106": "operations",
+    "R107": "routing",
 }
 
 
@@ -1673,6 +1681,130 @@ def _rule_bgp_inbound_route_filtering(data: ConfigData) -> list[Finding]:
     return findings
 
 
+def _rule_ipv6_security(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    if not data.ipv6_unicast_routing_enabled:
+        findings.append(
+            Finding(
+                rule_id="R100",
+                severity="high",
+                message="Global `ipv6 unicast-routing` etkinleştirilmemiş; cihaz IPv6 paketlerini yönlendiremez.",
+                context="global configuration",
+            )
+        )
+    else:
+        for intf in data.interfaces:
+            if intf.has_ip_address and not intf.shutdown and not intf.name.lower().startswith(("loopback", "null", "tunnel")):
+                if not intf.ipv6_urpf_enabled:
+                    findings.append(
+                        Finding(
+                            rule_id="R100",
+                            severity="high",
+                            message=f"{intf.name} arayüzünde `ipv6 verify unicast source` (IPv6 uRPF) etkin değil; IPv6 tabanlı spoofing saldırılarına yol açabilir.",
+                            context=f"interface {intf.name}",
+                        )
+                    )
+    return findings
+
+
+def _rule_unused_ports_security(data: ConfigData) -> list[Finding]:
+    findings: list[Finding] = []
+    for intf in data.interfaces:
+        is_physical = not intf.name.lower().startswith(("vlan", "loopback", "null", "tunnel", "port-channel"))
+        if is_physical and intf.shutdown:
+            if intf.access_vlan == 1 or intf.access_vlan is None:
+                findings.append(
+                    Finding(
+                        rule_id="R101",
+                        severity="medium",
+                        message=f"{intf.name} kullanılmayan/kapatılmış portu varsayılan VLAN 1'de bırakılmış. VLAN Hopping saldırılarını önlemek için izole bir VLAN'a (örn. VLAN 999) atanmalıdır.",
+                        context=f"interface {intf.name}",
+                    )
+                )
+    return findings
+
+
+def _rule_snmpv3_authpriv_only(data: ConfigData) -> list[Finding]:
+    if data.snmpv3_configured and data.snmpv3_has_non_priv:
+        return [
+            Finding(
+                rule_id="R102",
+                severity="high",
+                message="SNMPv3 v3 grubu veya kullanıcısı en güvenli seviye olan `authPriv` (hem kimlik doğrulama hem şifreleme) modunda yapılandırılmamış; `authNoPriv` veya `noAuthNoPriv` modunda bırakılmış.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_aaa_commands_authorization_accounting(data: ConfigData) -> list[Finding]:
+    if data.aaa_new_model_enabled:
+        if not data.aaa_authorization_commands or not data.aaa_accounting_commands:
+            return [
+                Finding(
+                    rule_id="R103",
+                    severity="high",
+                    message="AAA etkinleştirilmesine rağmen `aaa authorization commands` veya `aaa accounting commands` (komut loglaması/muhasebesi) yapılandırılmamış. Yöneticilerin yazdığı her komutun yetkilendirilmesi ve merkezi loglanması zorunludur.",
+                    context="global configuration",
+                )
+            ]
+    return []
+
+
+def _rule_console_aux_access_class_protection(data: ConfigData) -> list[Finding]:
+    if not data.console_access_class_configured:
+        return [
+            Finding(
+                rule_id="R104",
+                severity="medium",
+                message="`line con 0` (Console) altında `access-class` ACL koruması tanımlanmamış. Konsol portuna doğrudan erişimi sınırlandırmak için erişim kontrol filtresi uygulanmalıdır.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_boot_system_image_configured(data: ConfigData) -> list[Finding]:
+    if not data.boot_system_configured:
+        return [
+            Finding(
+                rule_id="R105",
+                severity="medium",
+                message="`boot system` komutu yapılandırılmamış. Cihazın açılışta hangi güvenli işletim sistemi imajı ile başlayacağı açıkça belirtilmelidir.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
+def _rule_http_authentication_aaa(data: ConfigData) -> list[Finding]:
+    if data.ip_http_server_enabled or data.ip_http_secure_server_enabled:
+        if not data.ip_http_authentication_aaa_enabled:
+            return [
+                Finding(
+                    rule_id="R106",
+                    severity="medium",
+                    message="HTTP/HTTPS web yönetici arayüzü etkin olmasına rağmen `ip http authentication aaa` kuralı tanımlanmamış. Web arayüzü kimlik doğrulaması merkezi AAA sistemine yönlendirilmelidir.",
+                    context="global configuration",
+                )
+            ]
+    return []
+
+
+def _rule_routing_route_limiters(data: ConfigData) -> list[Finding]:
+    has_routing = (data.bgp_local_as is not None) or (len(data.ospf_processes) > 0) or data.eigrp_enabled
+    if has_routing and not data.has_distribute_list:
+        return [
+            Finding(
+                rule_id="R107",
+                severity="medium",
+                message="Yönlendirme protokollerinde (BGP, OSPF, EIGRP vb.) alınan veya gönderilen rota sayısını sınırlayan rota limitörleri (`distribute-list` veya prefix-list filtreleri) tanımlanmamış. Aşırı rota anonsları bellek tükenmesine yol açabilir.",
+                context="global configuration",
+            )
+        ]
+    return []
+
+
 def run_rules(data: ConfigData) -> list[Finding]:
     findings: list[Finding] = []
     for rule in (
@@ -1768,6 +1900,14 @@ def run_rules(data: ConfigData) -> list[Finding]:
         _rule_mop_control,
         _rule_bootp_server_control,
         _rule_bgp_inbound_route_filtering,
+        _rule_ipv6_security,
+        _rule_unused_ports_security,
+        _rule_snmpv3_authpriv_only,
+        _rule_aaa_commands_authorization_accounting,
+        _rule_console_aux_access_class_protection,
+        _rule_boot_system_image_configured,
+        _rule_http_authentication_aaa,
+        _rule_routing_route_limiters,
     ):
         findings.extend(rule(data))
     for finding in findings:

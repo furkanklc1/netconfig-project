@@ -541,6 +541,53 @@ def enrich_finding(finding: Finding) -> str:
             "tanımı altında inbound yönde prefix-list veya filter-list filtreleri tanımlayın "
             "(`neighbor <ip> prefix-list <list> in`)."
         )
+    if finding.rule_id == "R100":
+        return (
+            "IPv6 trafiğini yönlendirmek için global olarak `ipv6 unicast-routing` komutunu uygulayın. Eğer IPv6 "
+            "yönlendirmesi aktif edilmişse, IPv6 tabanlı spoofing saldırılarını engellemek amacıyla tüm aktif "
+            "L3 arayüzlerinde `ipv6 verify unicast source reachable-via rx` (IPv6 uRPF) komutunu ve IPv6 ACL tanımlarını uygulayın."
+        )
+    if finding.rule_id == "R101":
+        return (
+            "Kullanılmayan veya kapatılmış (shutdown) fiziksel portların varsayılan VLAN 1'de kalması VLAN Hopping "
+            "saldırılarına neden olabilir. Bu portları `switchport access vlan 999` (veya kullanılmayan izole bir VLAN) "
+            "ile izole bir VLAN'a taşıyın ve `shutdown` durumunda tutmaya devam edin."
+        )
+    if finding.rule_id == "R102":
+        return (
+            "SNMPv3 erişiminin güvenliğini tam sağlamak için grubu veya kullanıcıyı en yüksek güvenlik seviyesi olan "
+            "`authPriv` (kimlik doğrulama ve şifreleme - `priv` parametresiyle birlikte) modunda yapılandırın "
+            "(ör. `snmp-server group <isim> v3 authpriv` ve `snmp-server user <isim> <grup> v3 auth sha <sifre> priv aes 128 <sifre>`)."
+        )
+    if finding.rule_id == "R103":
+        return (
+            "Yöneticilerin yazdığı her komutun yetkilendirilmesini ve merkezi olarak loglanmasını (muhasebe) sağlamak "
+            "için global düzeyde `aaa authorization commands <seviye> <yöntem>` ve `aaa accounting commands <seviye> "
+            "start-stop <yöntem>` kurallarını tanımlayın."
+        )
+    if finding.rule_id == "R104":
+        return (
+            "`line con 0` (Console) veya `line aux 0` hatlarına erişimi sınırlandırmak için bu hatların altında "
+            "`access-class <ACL> in` komutunu yapılandırarak sadece güvenilir IP/Console sunucularından erişime izin verin."
+        )
+    if finding.rule_id == "R105":
+        return (
+            "Cihazın açılışta güvenli ve doğrulanmış bir işletim sistemi imajı ile başlamasını garanti altına almak "
+            "için global olarak `boot system flash <imaj_adi>` veya `boot system bootflash:<imaj_adi>` komutuyla "
+            "açılış imajını açıkça belirtin."
+        )
+    if finding.rule_id == "R106":
+        return (
+            "HTTP/HTTPS web yönetim sunucusu aktif edildiğinde, yerel ve zayıf statik parolalar yerine merkezi kimlik "
+            "doğrulama ve denetim mekanizmalarını zorunlu kılmak için global olarak `ip http authentication aaa` "
+            "komutunu uygulayın."
+        )
+    if finding.rule_id == "R107":
+        return (
+            "Ağdaki aşırı rota (route) anonslarının cihaz belleğini (RIB/FIB) tüketmesini ve DoS durumuna yol açmasını "
+            "engellemek için yönlendirme protokolleri (BGP, OSPF, EIGRP vb.) altında alınan/gönderilen rota sayısını "
+            "sınırlayan `distribute-list` veya `prefix-list` / `route-limiters` filtrelerini uygulayın."
+        )
     return "Konfigürasyonu iş gereksinimine göre gözden geçirin."
 
 

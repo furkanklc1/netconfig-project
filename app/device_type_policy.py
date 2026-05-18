@@ -15,7 +15,6 @@ DEVICE_TYPE_LABELS_TR: dict[str, str] = {
     "layer3_switch": "Switch (L3)",
 }
 
-# Saf router profilinde anlamsız / tipik olmayan L2 kampüs kuralları atlanır.
 SKIP_RULES_BY_DEVICE_TYPE: dict[str, frozenset[str]] = {
     "unknown": frozenset(),
     "switch": frozenset(),
@@ -70,7 +69,6 @@ def filter_findings_by_device_type(findings: list[Finding], device_type: str) ->
     return [f for f in findings if f.rule_id not in skip]
 
 
-# --- CİHAZ ROLÜ (DEVICE ROLE) OTOMATİK TESPİTİ ---
 
 DEVICE_ROLE_LABELS = {
     "unknown": "Belirsiz",
@@ -79,7 +77,6 @@ DEVICE_ROLE_LABELS = {
     "access": "Kenar (Access / Departman)",
 }
 
-# Access (Departman) switch'lerde gereksiz kalabalık yapmaması için atlanacak Core/Routing/VPN kuralları
 SKIP_RULES_BY_ROLE = {
     "access": {
         "R005", # BGP neighbor şifresiz
@@ -104,7 +101,6 @@ def infer_device_role(text: str, device_type: str) -> str:
     if device_type == "router":
         return "router"
     
-    # Core (Omurga) özelliklerini gösteren komutlar:
     has_core_keywords = bool(
         re.search(
             r"^\s*(router\s+(bgp|ospf|isis|eigrp)|standby\s+\d+\s+ip|vrrp\s+\d+\s+ip|glbp\s+\d+\s+ip)",
@@ -113,15 +109,12 @@ def infer_device_role(text: str, device_type: str) -> str:
         )
     )
     
-    # Eğer gelişmiş yönlendirme protokolleri veya ağ geçidi yedekliliği (FHRP) varsa Core'dur.
     if has_core_keywords:
         return "core"
         
-    # Saf L2 Switch ise kesinlikle Access (Kenar)
     if device_type == "switch":
         return "access"
         
-    # Layer 3 switch ama core/omurga komutları içermiyorsa, o da departman/kenar switch'i gibi çalışıyordur.
     return "access"
 
 def filter_findings_by_device_role(findings: list[Finding], device_role: str) -> list[Finding]:
